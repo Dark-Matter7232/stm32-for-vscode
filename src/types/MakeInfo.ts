@@ -35,7 +35,7 @@ export interface TargetInfoInterface {
 
 export interface CustomMakefileRulesInterface {
   command: string;
-  rule: string;
+  rule: string | string[];
   dependsOn?: string;
 }
 

@@ -107,21 +107,20 @@ function createPrefixWhenNoneExists(input: string, prefix: string): string {
 function customMakefileRules(makeInfo: MakeInfo): string {
 
   if (makeInfo.customMakefileRules) {
-    // reduces the makefile rules and returns them
-    return makeInfo.customMakefileRules.reduce(
-      (previousString, currentValue) => {
-        const { command, rule, dependsOn = '' } = currentValue;
-        const newRule =
-          `
+    return makeInfo.customMakefileRules.map((e) => {
+      const { command, dependsOn, rule } = e;
+      let ruleString = `${rule}`;
+      if (Array.isArray(rule)) {
+        ruleString = rule.join(`\n\t`);
+      }
+      return `
 #######################################
 # ${command}
 #######################################
-${command}: ${dependsOn}
-\t${rule}
-      `;
-        return `${previousString}\n\n${newRule}`;
-      }, '');
-
+${command}: ${dependsOn || ''}
+\t${ruleString}
+       `;
+    }).join('\n\n');
   }
   // returns empty when no customMakefileRules are found
   return '';
@@ -245,7 +244,6 @@ endif
 HEX = $(CP) -O ihex
 BIN = $(CP) -O binary -S
 LSS = $(DP) -h -S
-
 
 REMOVE_DIRECTORY_COMMAND = rm -fR
 mkdir_function = mkdir -p $(1)
