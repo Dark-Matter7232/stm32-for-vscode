@@ -6,6 +6,13 @@
   - Create a way to embed these types of projects into a CI/CD environment
   - Full support for CubeIDE imports.
   - Add option to select installation location for the tooling.
+  
+## [3.2.15] - 2025-08-06
+### Added
+  - Issue #227: Added files folder for all the build output, binaries remain in the upper folder. 
+
+### Fixed
+  - Make 3.8 does not have the file function. Now echo out each line individually to prevent the windows shell line length problem.
 
 ## [3.2.14] - 2025-06-25
 ### Added

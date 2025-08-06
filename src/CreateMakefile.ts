@@ -190,15 +190,18 @@ DEBUG ?= 1
 OPTIMIZATION ?= ${createPrefixWhenNoneExists(makeInfo.optimization, '-')}
 
 RELEASE_DIRECTORY = $(BUILD_DIRECTORY)/debug
+OBJECT_DIRECTORY = $(RELEASE_DIRECTORY)/files
 ifeq ($(DEBUG),1)
   # Sets debugging optimization -Og and the debug information output
   OPTIMIZATION_FLAGS += -Og -g -gdwarf -ggdb -DDEBUG
   $(TARGET) := $(TARGET)-debug
   RELEASE_DIRECTORY := $(BUILD_DIRECTORY)/debug
+  OBJECT_DIRECTORY := $(RELEASE_DIRECTORY)/files
 else
   OPTIMIZATION_FLAGS += $(OPTIMIZATION)
   $(TARGET) := $(TARGET)-release
   RELEASE_DIRECTORY := $(BUILD_DIRECTORY)/release
+  OBJECT_DIRECTORY := $(RELEASE_DIRECTORY)/files
 endif
 
 ######################################
@@ -315,7 +318,7 @@ CXXFLAGS += -MMD -MP -MF"$(@:%.o=%.d)"
 
 # Output a list file for the compiled source file.
 # This is a representative of the source code in assembly
-ASSEMBLER_LIST_OUTPUT_FLAG = -Wa,-a,-ad,-alms=$(call add_release_directory,$<,lst)
+ASSEMBLER_LIST_OUTPUT_FLAG = -Wa,-a,-ad,-alms=$(call add_object_directory,$<,lst)
 CFLAGS += $(ASSEMBLER_LIST_OUTPUT_FLAG)
 CXXFLAGS += $(ASSEMBLER_LIST_OUTPUT_FLAG)
 
@@ -339,12 +342,13 @@ LDFLAGS = $(MCU) $(ADDITIONALLDFLAGS) -T$(LDSCRIPT) $(LIBDIR) $(LIBS) -Wl,-Map=$
 # build the application
 #######################################
 add_release_directory = $(sort $(addprefix $(RELEASE_DIRECTORY)/,$(addsuffix .$(2),$(basename $(notdir $(1))))))
+add_object_directory = $(sort $(addprefix $(OBJECT_DIRECTORY)/,$(addsuffix .$(2),$(basename $(notdir $(1))))))
 
 
 
-OBJECTS = $(call add_release_directory,$(C_SOURCES),o)
-OBJECTS += $(call add_release_directory,$(CXX_SOURCES),o)
-OBJECTS += $(call add_release_directory,$(ASM_SOURCES),o)
+OBJECTS = $(call add_object_directory,$(C_SOURCES),o)
+OBJECTS += $(call add_object_directory,$(CXX_SOURCES),o)
+OBJECTS += $(call add_object_directory,$(ASM_SOURCES),o)
 vpath %.c $(sort $(dir $(C_SOURCES)))
 vpath %.cc $(sort $(dir $(CXX_SOURCES)))
 vpath %.cp $(sort $(dir $(CXX_SOURCES)))
@@ -365,39 +369,39 @@ all: $(RELEASE_DIRECTORY)/$(TARGET).elf $(RELEASE_DIRECTORY)/$(TARGET).hex $(REL
 
 
 # C build
-$(RELEASE_DIRECTORY)/%.o: %.c ${makefileName} | $(RELEASE_DIRECTORY)
+$(OBJECT_DIRECTORY)/%.o: %.c ${makefileName} | $(OBJECT_DIRECTORY)
 \t$(CC) -c $(CFLAGS) $< -o $@
 
 # C++ build 
-$(RELEASE_DIRECTORY)/%.o: %.cc ${makefileName} | $(RELEASE_DIRECTORY)
+$(OBJECT_DIRECTORY)/%.o: %.cc ${makefileName} | $(OBJECT_DIRECTORY)
 \t$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(RELEASE_DIRECTORY)/%.o: %.cp ${makefileName} | $(RELEASE_DIRECTORY)
+$(OBJECT_DIRECTORY)/%.o: %.cp ${makefileName} | $(OBJECT_DIRECTORY)
 \t$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(RELEASE_DIRECTORY)/%.o: %.cxx ${makefileName} | $(RELEASE_DIRECTORY)
+$(OBJECT_DIRECTORY)/%.o: %.cxx ${makefileName} | $(OBJECT_DIRECTORY)
 \t$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(RELEASE_DIRECTORY)/%.o: %.cpp ${makefileName} | $(RELEASE_DIRECTORY)
+$(OBJECT_DIRECTORY)/%.o: %.cpp ${makefileName} | $(OBJECT_DIRECTORY)
 \t$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(RELEASE_DIRECTORY)/%.o: %.c++ ${makefileName} | $(RELEASE_DIRECTORY)
+$(OBJECT_DIRECTORY)/%.o: %.c++ ${makefileName} | $(OBJECT_DIRECTORY)
 \t$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(RELEASE_DIRECTORY)/%.o: %.C ${makefileName} | $(RELEASE_DIRECTORY)
+$(OBJECT_DIRECTORY)/%.o: %.C ${makefileName} | $(OBJECT_DIRECTORY)
 \t$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(RELEASE_DIRECTORY)/%.o: %.CPP ${makefileName} | $(RELEASE_DIRECTORY)
+$(OBJECT_DIRECTORY)/%.o: %.CPP ${makefileName} | $(OBJECT_DIRECTORY)
 \t$(CXX) -c $(CXXFLAGS) $< -o $@
 
 #Assembly build
-$(RELEASE_DIRECTORY)/%.o: %.s ${makefileName} | $(RELEASE_DIRECTORY)
+$(OBJECT_DIRECTORY)/%.o: %.s ${makefileName} | $(OBJECT_DIRECTORY)
 \t$(AS) -c $(ASFLAGS) $< -o $@
 
-$(RELEASE_DIRECTORY)/%.o: %.S ${makefileName} | $(RELEASE_DIRECTORY)
+$(OBJECT_DIRECTORY)/%.o: %.S ${makefileName} | $(OBJECT_DIRECTORY)
 \t$(AS) -c $(ASFLAGS) $< -o $@
 
-$(RELEASE_DIRECTORY)/%.o: %.sx ${makefileName} | $(RELEASE_DIRECTORY)
+$(OBJECT_DIRECTORY)/%.o: %.sx ${makefileName} | $(OBJECT_DIRECTORY)
 \t$(AS) -c $(ASFLAGS) $< -o $@
 #defines a new line
 define \\n
@@ -405,24 +409,28 @@ define \\n
 
 endef
 
-$(RELEASE_DIRECTORY)/$(TARGET).elf: $(OBJECTS) ${makefileName} | $(RELEASE_DIRECTORY)
-\t$(file >$@.in,$(foreach obj,$(OBJECTS),$(obj)$(\\n)))
+$(RELEASE_DIRECTORY)/$(TARGET).elf: $(OBJECTS) ${makefileName} | $(OBJECT_DIRECTORY)
+\t@echo "">$@.in
+\t$(foreach obj,$(OBJECTS),echo $(obj)>>$@.in;)
 \t$(${makeInfo.language === 'C' ? 'CC' : 'CXX'}) @$@.in $(LDFLAGS) -o $@
 \t$(SZ) $@
 
-$(RELEASE_DIRECTORY)/%.hex: $(RELEASE_DIRECTORY)/%.elf | $(RELEASE_DIRECTORY)
+$(RELEASE_DIRECTORY)/%.hex: $(RELEASE_DIRECTORY)/%.elf | $(RELEASE_DIRECTORY) $(OBJECT_DIRECTORY)
 \t$(HEX) $< $@
 
-$(RELEASE_DIRECTORY)/%.bin: $(RELEASE_DIRECTORY)/%.elf | $(RELEASE_DIRECTORY)
+$(RELEASE_DIRECTORY)/%.bin: $(RELEASE_DIRECTORY)/%.elf | $(RELEASE_DIRECTORY) $(OBJECT_DIRECTORY)
 \t$(BIN) $< $@
 
-$(RELEASE_DIRECTORY)/%.lss: $(RELEASE_DIRECTORY)/%.elf | $(RELEASE_DIRECTORY)
+$(RELEASE_DIRECTORY)/%.lss: $(RELEASE_DIRECTORY)/%.elf | $(RELEASE_DIRECTORY) $(OBJECT_DIRECTORY)
 \t$(LSS) $< > $@
+
+$(OBJECT_DIRECTORY):
+\t$(call mkdir_function, $@)
 
 $(RELEASE_DIRECTORY):
 \t$(call mkdir_function, $@)
 
-$(BUILD_DIRECTORY): | $(RELEASE_DIRECTORY)
+$(BUILD_DIRECTORY): | $(RELEASE_DIRECTORY) $(OBJECT_DIRECTORY)
 \t$(call mkdir_function, $@)
 
 
@@ -448,7 +456,7 @@ clean:
 # custom makefile rules
 #######################################
 ${customMakefileRules(makeInfo)}
-	
+  
 #######################################
 # dependencies
 #######################################
