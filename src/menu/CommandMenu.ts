@@ -50,6 +50,11 @@ const importCubeProject: BuildCommandDefinition = {
   command: 'stm32-for-vscode.importCubeIDEProject',
   explanation: 'Imports a CubeIDE project or example project when present in the current workspace.'
 };
+const openCubeMX: BuildCommandDefinition = {
+  label: "Open STM32CubeMX",
+  command: 'stm32-for-vscode.openCubeMX',
+  explanation: 'Opens STM32CubeMX for the current project.'
+};
 
 const COMMANDS: { [key: string]: BuildCommandDefinition } = {
   buildCommand,
@@ -59,7 +64,8 @@ const COMMANDS: { [key: string]: BuildCommandDefinition } = {
   flashReleaseCommand,
   debugCommand,
   changeProgrammerCommand,
-  importCubeProject
+  importCubeProject,
+  openCubeMX
 };
 
 class BuildCommand extends vscode.TreeItem {

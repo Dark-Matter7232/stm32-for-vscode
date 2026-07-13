@@ -31,6 +31,7 @@ import CommandMenu from './menu/CommandMenu';
 import addCommandMenu from './menu';
 import buildSTM from './BuildTask';
 import { checkBuildTools } from './buildTools';
+import { openCubeMX } from './CubeMX';
 import importAndSetupCubeIDEProject from './import';
 import { installBuildToolsCommand } from './buildTools/installTools';
 
@@ -90,6 +91,11 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
     await checkBuildTools(context);
   });
   context.subscriptions.push(buildToolsCommand);
+
+  const openCubeMXCommand = vscode.commands.registerCommand("stm32-for-vscode.openCubeMX", async () => {
+    await openCubeMX();
+  });
+  context.subscriptions.push(openCubeMXCommand);
   const buildCmd = vscode.commands.registerCommand(
     'stm32-for-vscode.build',
     async () => {

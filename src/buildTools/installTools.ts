@@ -156,12 +156,14 @@ export function installCMake(toolsStoragePath: vscode.Uri, npx: string): XpmInst
 export function installArmNonEabi(toolsStoragePath: vscode.Uri, npx: string): XpmInstallType {
   return xpmInstall(toolsStoragePath, npx, armNoneEabiDefinition);
 }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const nodeRegex: { [key: string]: { [key: string]: RegExp } } = {
   win32: {
     x32: /href="(\/dist\/v\d+\.\d+\.\d+\/node-v\d+\.\d+\.\d+-win-x86.zip)/gm,
     x64: /href="(\/dist\/v\d+\.\d+\.\d+\/node-v\d+\.\d+\.\d+-win-x64.zip)/gm,
     ia32: /href="(\/dist\/v\d+\.\d+\.\d+\/node-v\d+\.\d+\.\d+-win-x86.zip)/gm,
     ia64: /href="(\/dist\/v\d+\.\d+\.\d+\/node-v\d+\.\d+\.\d+-win-x64.zip)/gm,
+    arm64: /href="(\/dist\/v\d+\.\d+\.\d+\/node-v\d+\.\d+\.\d+-win-arm64.zip)/gm,
   },
   darwin: {
     x64: /href="(\/dist\/v\d+\.\d+\.\d+\/node-v\d+\.\d+\.\d+-darwin-x64.tar.gz)/gm,
@@ -181,6 +183,7 @@ const nodePlatformIdentifiers: { [key: string]: { [key: string]: string } } = {
     x64: 'win-x64.zip',
     ia32: 'win-x86.zip',
     ia64: 'win-x64.zip',
+    arm64: 'win-arm64.zip',
   },
   darwin: {
     x64: 'darwin-x64.tar.gz',
@@ -221,8 +224,8 @@ export function getPlatformSpecificNodeLink(
   return platformLink;
 }
 
-// latest gallium is the latest lts v16 version. 
-const nodeLatestURL = 'https://nodejs.org/dist/latest-gallium/';
+// latest iron is the latest lts v20 version. 
+const nodeLatestURL = 'https://nodejs.org/dist/latest-v20.x/';
 
 /**
  * Gets the latest node version download filename for the current platform.

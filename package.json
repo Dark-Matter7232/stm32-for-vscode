@@ -118,6 +118,10 @@
       {
         "command": "stm32-for-vscode.setProgrammer",
         "title": "STM32: Set programmer for the STM32 chip"
+      },
+      {
+        "command": "stm32-for-vscode.openCubeMX",
+        "title": "STM32: Open STM32CubeMX"
       }
     ],
     "configuration": {
@@ -143,6 +147,11 @@
           "type": "string",
           "default": "",
           "description": "Path to the GCC Arm Toolchain (prefix arm-none-eabi) to use, will use the one in PATH or the cortex-debug settings as default"
+        },
+        "stm32-for-vscode.cubeMXPath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to the STM32CubeMX executable."
         }
       }
     }
