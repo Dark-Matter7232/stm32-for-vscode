@@ -19,7 +19,7 @@ import { which } from '../Helpers';
 /*
  * The steps for validating the toolchain are as follows
  * 1. Check settings paths
- * 2. Check for automatically installed tools by STM32 for VSCode
+ * 2. Check for automatically installed tools by STM32 for VS Code Community
  * 3. Check the pre-installed tool paths 
 */
 /**

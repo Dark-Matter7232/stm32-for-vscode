@@ -7,7 +7,7 @@ import  {forEach, isEqual, set} from 'lodash';
 import { ToolChain } from '../types/MakeInfo';
 import {which} from '../Helpers';
 /**
- * Sets up cortex debug to work with the paths STM32 for VSCode is given in the settings.
+ * Sets up cortex debug to work with the paths STM32 for VS Code Community is given in the settings.
  * @param tools object containing toolchain paths
  */
 export function setCortexDebugSettingsInWorkspace(tools: ToolChain): void {
@@ -59,7 +59,7 @@ export async function checkBuildTools(context: vscode.ExtensionContext): Promise
   await Promise.all(globalSettingsUpdatePromises);
   // check if there is a local settings file and update if neccessary.
   // NOTE: settings should not be added or editted in the workspace for STM32 for vscode,
-  // however old version of STM32 for VSCode did put it in the workspace folder
+  // however older versions of STM32 for VS Code put it in the workspace folder
   const localUpdatePromises: Thenable<void>[] = [];
   if (vscode?.workspace?.workspaceFolders?.[0]) {
     const localSettingsPath = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, '.vscode', 'settings.json');

@@ -25,7 +25,7 @@ export const makefileName = 'STM32Make.make';
 export const ignoreFileName = '.stm32ignore';
 export const EXTENSION_CONFIG_NAME = 'STM32-for-VSCode.config.yaml';
 export const standardOpenOCDInterface = 'stlink';
-export const EXTENSION_NAME = 'stm32-for-vscode';
+export const EXTENSION_NAME = 'stm32-for-vscode-community';
 export const STM32_ENVIRONMENT_FILE_NAME = '.stm32env';
 export const TOOL_SETTINGS = {
   openOCDPath: 'openOCDPath',
@@ -33,5 +33,5 @@ export const TOOL_SETTINGS = {
   armToolchainPath: 'armToolchainPath',
   openOCDInterface: 'openOCDInterface',
 };
-export const GITHUB_ISSUES_URL = 'https://github.com/bmd-studio/stm32-for-vscode/issues';
+export const GITHUB_ISSUES_URL = 'https://github.com/Dark-Matter7232/stm32-for-vscode/issues';
 export const MAKE_DEFAULT_CONCURRENT_JOBS = 16;

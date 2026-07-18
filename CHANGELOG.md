@@ -2,10 +2,22 @@
 
 ## [Unreleased]
 ### Added
-  - Add support for unit testing.
-  - Create a way to embed these types of projects into a CI/CD environment
-  - Full support for CubeIDE imports.
-  - Add option to select installation location for the tooling.
+  - Rebranded the project as STM32 for VS Code Community, the community-maintained successor to the original extension.
+  - Added unified ELF/MAP memory analysis with expandable regions, sections, symbols, usage visualization, sorting, filtering, and source navigation.
+  - Added Makefile build profiles for debug and release workflows.
+  - Added firmware artifact reporting for ELF, HEX, BIN, MAP, and listing files.
+  - Added CubeMX executable path configuration and launcher support.
+  - Added unit-testing support and CI/CD project embedding support.
+  - Added full CubeIDE import support and configurable tool installation location.
+
+### Changed
+  - Lazy-loaded commands to improve extension startup time.
+  - Updated the demo media to reflect the current extension workflow.
+  - Updated the supported development environment to Node.js 20 LTS.
+
+### Fixed
+  - Improved ARM64 compatibility.
+  - Corrected memory usage reporting and analyzer percentage visualization.
 
 ## [3.2.14] - 2025-06-25
 ### Added

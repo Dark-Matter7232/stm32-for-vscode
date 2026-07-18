@@ -10,16 +10,6 @@ import {
 } from '../helpers';
 import importAndSetupCubeIDEProject from '../../import';
 
-async function stopExit(time: number): Promise<void> {
-  return new Promise<void>(
-    (resolve) => {
-      setTimeout(() => {
-        resolve();
-      }, time);
-    }
-  );
-
-}
 suite('importer test', () => {
   afterEach(() => {
     cleanUpSTM32ForVSCodeArtifacts();

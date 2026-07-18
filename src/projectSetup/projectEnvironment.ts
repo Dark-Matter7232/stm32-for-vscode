@@ -1,5 +1,5 @@
 /**
- * Handles the environment file used by STM32 for VSCode's makefile for setting up things like the compiler
+ * Handles the environment file used by STM32 for VS Code Community's makefile for setting up things like the compiler
  */
 import { EXTENSION_NAME, STM32_ENVIRONMENT_FILE_NAME, makefileName } from '../Definitions';
 import { ToolChain } from '../types/MakeInfo';

@@ -90,7 +90,7 @@ interface TaskConfigCheck {
   hasFlashConfig: boolean;
 }
 /**
- * Checks if the required STM32 for VSCode build,flash and build clean tasks are present.
+ * Checks if the required STM32 for VS Code Community build, flash, and clean-build tasks are present.
  * @param tasksConfig task definition from vscode.
  * @returns 
  */
@@ -115,9 +115,9 @@ function checkTasksForRequiredTasks(tasksConfig: TaskDefinition[]): TaskConfigCh
 }
 
 /**
- * Adds required STM32 for VSCode tasks to a TaskDefinition array when they are missing.
+ * Adds required STM32 for VS Code Community tasks to a TaskDefinition array when they are missing.
  * @param tasksConfig tasks configuration in the current workspace
- * @param taskConfigurationCheck The object containing the checks for all required check by STM32 for VSCode.
+ * @param taskConfigurationCheck The object containing the checks required by STM32 for VS Code Community.
  * @returns 
  */
 function addTasksWhenMissing(tasksConfig: TaskDefinition[], taskConfigurationCheck: TaskConfigCheck): TaskDefinition[] {

@@ -1,6 +1,6 @@
-# Contributing to STM32 Development Extension
+# Contributing to STM32 for VS Code Community
 
-Thank you for your interest in contributing to the STM32 Development Extension for VS Code! This document provides guidelines and instructions to help you get started.
+Thank you for your interest in contributing to STM32 for VS Code Community, the community-maintained successor to the original STM32 for VS Code extension. This document provides guidelines and instructions to help you get started.
 
 ## Getting Started
 
@@ -14,7 +14,7 @@ Thank you for your interest in contributing to the STM32 Development Extension f
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/bmd-studio/stm32-for-vscode
+git clone https://github.com/Dark-Matter7232/stm32-for-vscode
 cd stm32-for-vscode
 ```
 

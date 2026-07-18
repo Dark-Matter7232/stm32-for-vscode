@@ -53,7 +53,7 @@ export function getAbsoluteCompilerPath(info: MakeInfo): string {
   if(!compilerPath) {
     throw new Error(
       // eslint-disable-next-line max-len
-      "Getting the absolute compiler path failed. Please create an issue on the STM32 for VSCode GitHub if you encounter this."
+      "Getting the absolute compiler path failed. Please create an issue on the STM32 for VS Code Community GitHub if you encounter this."
     );
   }
   return compilerPath;

@@ -74,7 +74,8 @@ export function compareVersions(version1: XPMToolVersion | null, version2: XPMTo
 }
 
 /**
- * return the xpm path for the specified tool e.g ...../bmd.stm32-for-vscode/@xpack-dev-tools/openocd
+ * return the xpm path for the specified tool, for example
+ * ...../stm32-for-vscode/@xpack-dev-tools/openocd
  * @param tool The tool for which the paths needs to be found
  * @param xpmPath The path to the xpm install location e.g. context.globalStoragePath
  */

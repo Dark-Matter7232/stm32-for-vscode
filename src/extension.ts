@@ -70,7 +70,10 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
     });
   context.subscriptions.push(setProgrammerCommand);
   const openSettingsCommand = vscode.commands.registerCommand('stm32-for-vscode.openSettings', () => {
-    vscode.commands.executeCommand('workbench.action.openSettings', `@ext:bmd.stm32-for-vscode`);
+    vscode.commands.executeCommand(
+      'workbench.action.openSettings',
+      '@ext:dark-matter7232.stm32-for-vscode-community',
+    );
   });
   context.subscriptions.push(openSettingsCommand);
   const openExtension = vscode.commands.registerCommand('stm32-for-vscode.openExtension', async () => {

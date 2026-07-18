@@ -35,7 +35,7 @@ export function createYamlArray(info: string[]): string {
 }
 
 /**
- * Creates a configuration file for STM32 For VSCode
+ * Creates a configuration file for STM32 for VS Code Community
  * @param config configuration to be created
  */
 export function createConfigFile(config: ExtensionConfiguration): string {
@@ -45,7 +45,7 @@ export function createConfigFile(config: ExtensionConfiguration): string {
     return `  ${name}:\n${profileYaml}`;
   }).join('\n');
   return (
-    `# Configuration file for the STM32 for VSCode extension
+    `# Configuration file for the STM32 for VS Code Community extension
 # Arrays can be inputted in two ways. One is: [entry_1, entry_2, ..., entry_final]
 # or by adding an indented list below the variable name e.g.:
 # VARIABLE:
@@ -184,7 +184,7 @@ export async function readConfigFile(): Promise<string> {
 }
 
 /**
- * Parses the STM32 for VSCode configuration file.
+ * Parses the STM32 for VS Code Community configuration file.
  * @param configurationFile The configuration file in string format which will be parsed
  * @returns ExtensionConfiguration or throws an error when it cannot parse it.
  */

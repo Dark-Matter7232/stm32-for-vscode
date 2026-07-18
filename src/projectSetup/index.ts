@@ -30,7 +30,7 @@ export function noMakefileAndConfigFileDialogue(): Promise<boolean> {
               `Are you sure you want to create a custom project?\n
               This means that you will have to fill in all the MCU definitions ` +
               `and file locations in: ${EXTENSION_CONFIG_NAME} before the project ` +
-              `will compile with the STM32 for VSCode extension`,
+              `will compile with the STM32 for VS Code Community extension`,
               "Yes", "Cancel"
             ).then((infoMessage) => {
               if (infoMessage === 'Yes') {
@@ -63,7 +63,7 @@ export function noMakefileAndConfigFileDialogue(): Promise<boolean> {
 
 /**
  * Check if project files are present. If the makefile and config file are missing a dialogue
- * will be presented asking to create an STM32 for VSCode configuration file
+ * will be presented asking to create an STM32 for VS Code Community configuration file
  * @returns returns if required files are present and false when they need to be created or are not present
  */
 export async function checkProjectFilesAndCreate(): Promise<boolean> {

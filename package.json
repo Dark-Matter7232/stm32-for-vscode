@@ -1,16 +1,15 @@
 {
-  "name": "stm32-for-vscode",
-  "displayName": "stm32-for-vscode",
-  "description": "Fork: An extension for: setting up, compiling, uploading and debugging STM32 applications",
-  "version": "3.2.26",
+  "name": "stm32-for-vscode-community",
+  "displayName": "STM32 for VS Code Community",
+  "description": "The community-maintained successor to STM32 for VS Code for building, flashing, debugging, and analyzing STM32 projects",
+  "version": "4.0.0",
   "engines": {
     "vscode": "^1.44.0"
   },
   "license": "MIT",
   "author": {
-    "name": "Bureau Moeilijke Dingen",
-    "email": "bureau@moeilijkedingen.nl",
-    "url": "https://bmd.studio"
+    "name": "Dark-Matter7232",
+    "url": "https://github.com/Dark-Matter7232"
   },
   "icon": "media/STM32-for-VSCode-logo.png",
   "keywords": [
@@ -19,8 +18,15 @@
     "Nucleo",
     "CubeMX"
   ],
-  "publisher": "bmd",
-  "repository": "https://github.com/bmd-studio/stm32-for-vscode",
+  "publisher": "dark-matter7232",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Dark-Matter7232/stm32-for-vscode.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Dark-Matter7232/stm32-for-vscode/issues"
+  },
+  "homepage": "https://github.com/Dark-Matter7232/stm32-for-vscode#readme",
   "categories": [
     "Other"
   ],
@@ -54,7 +60,7 @@
         {
           "id": "stm32-for-vscode-commands",
           "icon": "media/STM32-for-VSCode-logo.svg",
-          "title": "STM32 For VSCode",
+          "title": "STM32 for VS Code Community",
           "when": "stm32ForVSCodeReady"
         }
       ]
@@ -63,8 +69,8 @@
       "stm32-for-vscode-commands": [
         {
           "id": "stm32ForVSCodeCommands",
-          "name": "STM32 For VSCode commands",
-          "contextualTitle": "STM32 For VSCode commands",
+          "name": "STM32 for VS Code Community",
+          "contextualTitle": "STM32 for VS Code Community",
           "when": "stm32ForVSCodeReady"
         }
       ]
@@ -102,19 +108,19 @@
       },
       {
         "command": "stm32-for-vscode.installBuildTools",
-        "title": "STM32: Install all the build tools for the STM32 for VSCode extension"
+        "title": "STM32: Install build tools for STM32 for VS Code Community"
       },
       {
         "command": "stm32-for-vscode.openSettings",
-        "title": "STM32: Open the settings editor for STM32 for VSCode"
+        "title": "STM32: Open settings for STM32 for VS Code Community"
       },
       {
         "command": "stm32-for-vscode.checkBuildTools",
-        "title": "STM32: Check if the required build tools are present for STM32 for VSCode"
+        "title": "STM32: Check build tools for STM32 for VS Code Community"
       },
       {
         "command": "stm32-for-vscode.openExtension",
-        "title": "STM32: Open the STM32 for VSCode extension"
+        "title": "STM32: Open STM32 for VS Code Community"
       },
       {
         "command": "stm32-for-vscode.setProgrammer",
@@ -135,7 +141,7 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "STM32 for VSCode configuration",
+      "title": "STM32 for VS Code Community configuration",
       "properties": {
         "stm32-for-vscode.openOCDPath": {
           "type": "string",

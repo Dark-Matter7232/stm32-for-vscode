@@ -50,7 +50,7 @@ export default function executeTask(
     const processTask = new Task(
       { type },
       currentTaskScope,
-      name, 'STM32 for VSCode',
+      name, 'STM32 for VS Code Community',
       processExec,
       problemMatcher
     );
