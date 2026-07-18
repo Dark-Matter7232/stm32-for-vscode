@@ -77,6 +77,12 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
     await checkBuildTools(context);
   });
   context.subscriptions.push(openExtension);
+  const openMemoryAnalyzer = vscode.commands.registerCommand(
+    'stm32-for-vscode.openMemoryAnalyzer', async (focusRegion?: string) => {
+      const { openMemoryAnalyzer: openAnalyzer } = await import('./MemoryAnalyzerPanel');
+      await openAnalyzer(focusRegion);
+    });
+  context.subscriptions.push(openMemoryAnalyzer);
   const installBuildTools = vscode.commands.registerCommand('stm32-for-vscode.installBuildTools', async () => {
     const { installBuildToolsCommand } = await import('./buildTools/installTools');
     await installBuildToolsCommand(context, commandMenu);
@@ -160,6 +166,6 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
   context.subscriptions.push(profileActionCmd);
   return {
     installTools: async () => { const { installBuildToolsCommand } = await import('./buildTools/installTools');
-    await installBuildToolsCommand(context, commandMenu); }
+      await installBuildToolsCommand(context, commandMenu); }
   };
 }

@@ -2,7 +2,7 @@
   "name": "stm32-for-vscode",
   "displayName": "stm32-for-vscode",
   "description": "Fork: An extension for: setting up, compiling, uploading and debugging STM32 applications",
-  "version": "3.2.25",
+  "version": "3.2.26",
   "engines": {
     "vscode": "^1.44.0"
   },
@@ -37,7 +37,8 @@
     "workspaceContains:*.ioc",
     "workspaceContains:STM32-for-VSCode.config.yaml",
     "onView:stm32ForVSCodeCommands",
-    "onCommand:stm32-for-vscode.openExtension"
+    "onCommand:stm32-for-vscode.openExtension",
+    "onCommand:stm32-for-vscode.openMemoryAnalyzer"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -126,6 +127,10 @@
       {
         "command": "stm32-for-vscode.profileAction",
         "title": "STM32: Run Profile Action"
+      },
+      {
+        "command": "stm32-for-vscode.openMemoryAnalyzer",
+        "title": "STM32: Open Memory Analyzer"
       }
     ],
     "configuration": {

@@ -4,6 +4,7 @@ import { execFile } from 'child_process';
 import { commands, window, workspace } from 'vscode';
 
 import MakeInfo from './types/MakeInfo';
+import { analyzeBuild, getLatestMemoryAnalysisReport, setLatestMemoryAnalysisReport } from './memoryAnalyzer';
 
 export interface BuildArtifacts {
   elf?: string;
@@ -13,7 +14,7 @@ export interface BuildArtifacts {
   lss?: string;
 }
 
-function artifactCandidates(info: MakeInfo, debug: boolean): BuildArtifacts[] {
+export function artifactCandidates(info: MakeInfo, debug: boolean): BuildArtifacts[] {
   const suffix = debug ? 'debug' : 'release';
   const target = `${info.target}-${suffix}`;
   const directory = path.join('build', suffix);
@@ -35,7 +36,7 @@ function artifactCandidates(info: MakeInfo, debug: boolean): BuildArtifacts[] {
   ];
 }
 
-function existingArtifacts(candidate: BuildArtifacts, root: string): BuildArtifacts {
+export function existingArtifacts(candidate: BuildArtifacts, root: string): BuildArtifacts {
   const result: BuildArtifacts = {};
   (Object.keys(candidate) as (keyof BuildArtifacts)[]).forEach((key) => {
     const value = candidate[key];
@@ -69,14 +70,29 @@ export interface MemoryRegionUsage {
   profile: string;
 }
 
-let latestMemoryUsage: MemoryRegionUsage[] = [];
+let latestBuildArtifacts: BuildArtifacts = {};
 
 export function getLatestMemoryUsage(): MemoryRegionUsage[] {
-  return latestMemoryUsage;
+  // Kept as a compatibility API; the unified analysis report is the source of truth.
+  const report = getLatestMemoryAnalysisReport();
+  return report?.regions
+    .filter((region) => /RAM|FLASH/i.test(region.name))
+    .map((region) => ({
+      name: region.name.toUpperCase().includes('RAM') ? 'RAM' : 'FLASH',
+      used: region.used,
+      size: region.size,
+      percentage: region.size ? (region.used / region.size) * 100 : undefined,
+      profile: report.profile || 'debug',
+    })) || [];
+}
+
+export function getLatestBuildArtifacts(): BuildArtifacts {
+  return { ...latestBuildArtifacts };
 }
 
 export async function clearLatestMemoryUsage(): Promise<void> {
-  latestMemoryUsage = [];
+  setLatestMemoryAnalysisReport(undefined);
+  latestBuildArtifacts = {};
   await commands.executeCommand('stm32-for-vscode.refreshMenu');
 }
 
@@ -153,6 +169,7 @@ export default async function reportBuildArtifacts(info: MakeInfo, debug: boolea
   const candidate = artifactCandidates(info, debug)
     .map((entry) => existingArtifacts(entry, root))
     .find((entry) => entry.elf || entry.hex || entry.bin) || {};
+  latestBuildArtifacts = candidate;
   const lines = [`Build profile: ${info.profile}`];
   (Object.keys(candidate) as (keyof BuildArtifacts)[]).forEach((key) => {
     const value = candidate[key];
@@ -162,30 +179,46 @@ export default async function reportBuildArtifacts(info: MakeInfo, debug: boolea
     }
   });
   if (candidate.elf) {
-    const memory = await getMemoryUsage(info, path.join(root, candidate.elf));
+    const elfPath = path.join(root, candidate.elf);
+    const mapPath = candidate.map ? path.join(root, candidate.map) : undefined;
+    const memory = await getMemoryUsage(info, elfPath);
+    const regionSizes = getMemoryRegionSizes(info, root);
+    const memoryRegions: Array<{name: 'RAM' | 'FLASH'; used: number; size?: number}> = [];
     if (memory) {
       lines.push(`FLASH: ${formatBytes(memory.flash)}`);
       lines.push(`RAM: ${formatBytes(memory.ram)}`);
-      const regionSizes = getMemoryRegionSizes(info, root);
-      latestMemoryUsage = (['RAM', 'FLASH'] as const).map((name) => {
+      (['RAM', 'FLASH'] as const).forEach((name) => {
         const used = name === 'RAM' ? memory.ram : memory.flash;
         const size = Object.entries(regionSizes).find(([region]) => region.includes(name))?.[1];
-        return {
-          name,
-          used,
-          size,
-          percentage: size ? (used / size) * 100 : undefined,
-          profile: info.profile || 'debug',
-        };
+        memoryRegions.push({ name, used, size });
       });
     }
+    const analysis = await analyzeBuild(elfPath, mapPath, info.tools.armToolchainPath);
+    analysis.profile = info.profile || 'debug';
+    analysis.regions.forEach((region) => {
+      const summary = memoryRegions.find((entry) => region.name.toUpperCase().includes(entry.name));
+      if (summary) {
+        region.used = summary.used;
+        region.size = summary.size || region.size;
+      }
+    });
+    setLatestMemoryAnalysisReport(analysis);
   }
   if (!candidate.elf) {
-    latestMemoryUsage = [];
+    setLatestMemoryAnalysisReport(undefined);
+    latestBuildArtifacts = {};
   }
   await commands.executeCommand('stm32-for-vscode.refreshMenu');
   if (Object.keys(candidate).length > 0) {
     window.showInformationMessage(lines.join(' | '));
+    if (candidate.elf) {
+      const { refreshMemoryAnalyzer } = await import('./MemoryAnalyzerPanel');
+      await refreshMemoryAnalyzer(
+        path.join(root, candidate.elf),
+        candidate.map ? path.join(root, candidate.map) : undefined,
+        info.tools.armToolchainPath,
+      );
+    }
   }
   return candidate;
 }

@@ -40,7 +40,7 @@ Click on the ST icon and select the command you want to run. Once this is done f
 - Import existing CubeIDE projects or STM32CubeMX examples.
 - Configuration automatically generated and stored in `STM32-for-VSCode.config.yaml` file.
 - Build and flash profiles shown in expandable groups in the STM32 activity view.
-- Generated artifact and memory usage reporting after successful builds.
+- Generated artifact reporting and unified memory analysis after successful builds.
 
 ### Build Process
 The build process uses the information of the CubeMX makefile and the `STM32-for-VSCode.config.yaml` file to search for dependencies and set flags. The makefile is optional; however, the `STM32-for-VSCode.config.yaml` will always be present when building. After it has gathered all the files and information it will check if the STM32 for VSCode specific makefile needs to be updated, if so it will update the makefile and run the make/build process.
@@ -64,6 +64,12 @@ profiles:
 After a successful build, the extension reports the generated ELF, HEX, BIN, MAP, and listing artifacts when present, along with ELF-derived flash and RAM usage.
 
 The STM32 activity view also shows the latest RAM and FLASH usage, including used size, configured linker-region size, and percentage used. Values are displayed in bytes, KiB, or MiB as appropriate. `Clean Build` clears the displayed memory report immediately; a successful rebuild replaces it with the new report.
+
+Use `STM32: Open Memory Analyzer` from the Command Palette or the unified `Memory Analysis` activity-view item to inspect the latest ELF/MAP pair. The analyzer follows a compact, expandable table layout: memory regions contain linker sections, and sections can be expanded to show sized demangled symbols. It includes usage bars, used/free totals, selection and collapse controls, case-sensitive search, per-section sorting, and clickable source locations that open the exact symbol line in the editor. The view refreshes after a successful extension build.
+
+#### Memory analyzer inspiration and attribution
+
+The memory analyzer UI and interaction model were inspired by [STM32 Build Analyzer](https://github.com/niwciu/stm32-build-analyzer) by niwciu. In particular, this project drew inspiration from its expandable region/section/symbol table, memory usage visualization, source navigation, and symbol sorting. The reference project is released under the MIT License; its original authors and license remain acknowledged here. This extension’s implementation is integrated with its existing Makefile and ARM toolchain workflow and is not a bundled copy of that project.
 
 ### Importing
 STM32CubeIDE and ST provided example projects can now be imported by using the: "import CubeIDEProject" command. Do note that the project folder should be open in the workspace.

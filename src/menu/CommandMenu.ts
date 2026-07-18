@@ -2,7 +2,8 @@ import * as vscode from "vscode";
 import { forEach } from "lodash";
 
 import { parseConfigfile, readConfigFile } from '../configuration/stm32Config';
-import { formatBytes, getLatestMemoryUsage, MemoryRegionUsage } from '../buildArtifacts';
+import { formatBytes } from '../buildArtifacts';
+import { getLatestMemoryAnalysisReport, MemoryAnalyzerRegion } from '../memoryAnalyzer';
 
 export interface BuildCommandDefinition {
   label: string;
@@ -110,28 +111,34 @@ export default class CommandMenuProvider implements vscode.TreeDataProvider<Buil
         [action, profile],
       )
     ));
-    const memory = getLatestMemoryUsage();
-    const memoryChildren = memory.length > 0
-      ? memory.map((region: MemoryRegionUsage) => {
+    const analysis = getLatestMemoryAnalysisReport();
+    const memoryChildren = analysis
+      ? analysis.regions.map((region: MemoryAnalyzerRegion) => {
         const used = formatBytes(region.used);
-        const size = region.size ? formatBytes(region.size) : 'unknown';
-        const percentage = region.percentage === undefined ? 'n/a' : `${region.percentage.toFixed(2)}%`;
+        const size = formatBytes(region.size);
+        const percentage = region.size ? `${((region.used / region.size) * 100).toFixed(2)}%` : 'n/a';
         return new BuildCommand(
           region.name,
           `${region.name}: ${used} used of ${size} (${percentage})`,
-          undefined,
+          'stm32-for-vscode.openMemoryAnalyzer',
           vscode.TreeItemCollapsibleState.None,
-          undefined,
+          [region.name],
           undefined,
           `${used} / ${size}  ${percentage}`,
         );
       })
       : [new BuildCommand(
-        'No build report available',
-        'Build a profile to see RAM and FLASH usage.',
+        'No analysis available',
+        'Build a profile to generate the unified memory analysis report.',
         undefined,
         vscode.TreeItemCollapsibleState.None,
       )];
+    memoryChildren.push(new BuildCommand(
+      'Open Detailed Analyzer',
+      'Inspect regions, sections, symbols, and source locations.',
+      'stm32-for-vscode.openMemoryAnalyzer',
+      vscode.TreeItemCollapsibleState.None,
+    ));
     const commands: BuildCommand[] = [
       new BuildCommand(
         'Build',
@@ -150,8 +157,8 @@ export default class CommandMenuProvider implements vscode.TreeDataProvider<Buil
         profileActions('flash'),
       ),
       new BuildCommand(
-        'Memory Usage',
-        'RAM and FLASH usage from the latest successful build.',
+        'Memory Analysis',
+        'Unified RAM, FLASH, section, and symbol analysis from the latest successful build.',
         undefined,
         vscode.TreeItemCollapsibleState.Collapsed,
         undefined,
