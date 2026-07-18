@@ -51,6 +51,7 @@ import updateConfiguration from './configuration/WorkspaceConfigurations';
 import updateMakefile from './UpdateMakefile';
 import { writeConfigFile } from './configuration/stm32Config';
 import { createProjectEnvironmentFile, hasProjectEnvironmentFile } from './projectSetup/projectEnvironment';
+import reportBuildArtifacts, { clearLatestMemoryUsage } from './buildArtifacts';
 
 /**
  * Checks if the language is C++ and that there is no main.cpp present. 
@@ -192,15 +193,17 @@ async function cleanBuildTask(makeArguments: string, makePath: string| boolean):
   }
 }
 
-export default async function buildSTM(options?: { 
+export default async function buildSTM(options?: {
   flash?: boolean,
   cleanBuild?: boolean,
-  debug?: boolean 
+  debug?: boolean,
+  profile?: string,
 }): Promise<void> {
   const {
     flash,
     cleanBuild,
-    debug = true,
+    debug,
+    profile,
   } = options || {};
 
 
@@ -211,13 +214,15 @@ export default async function buildSTM(options?: {
 
   try {
 
-    info = await getInfo(currentWorkspaceFolder.posix);
+    const requestedProfile = profile || (debug === false ? 'release' : undefined);
+    info = await getInfo(currentWorkspaceFolder.posix, requestedProfile);
+    const profileDebug = info.debug ?? debug ?? true;
     await createSTM32EnvironmentFileWhenRequired(info.tools);
     let makeFlags = info.makeFlags.length > 0 ? ` ${info.makeFlags.join(' ')}` : '';
     const extensionConfiguration = workspace.getConfiguration('stm32-for-vscode');
     const concurrentJobs = extensionConfiguration.get('makeConcurrentJobs', MAKE_DEFAULT_CONCURRENT_JOBS);
 
-    if(!debug) {
+    if(!profileDebug) {
       makeFlags = `${makeFlags} DEBUG=0`;
     } else {
       makeFlags = `${makeFlags} DEBUG=1`;
@@ -225,6 +230,7 @@ export default async function buildSTM(options?: {
 
     const makeArguments = `-j${concurrentJobs}${makeFlags} -f ${makefileName}`;
     if (cleanBuild) {
+      await clearLatestMemoryUsage();
       await cleanBuildTask(makeArguments, info.tools.makePath);
     }
 
@@ -252,6 +258,7 @@ export default async function buildSTM(options?: {
       {},
       "$gcc"
     );
+    await reportBuildArtifacts(info, profileDebug);
   } catch (err) {
     const errMsg = `Something went wrong during the build process: ${err}`;
     window.showErrorMessage(errMsg);

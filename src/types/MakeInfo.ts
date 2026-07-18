@@ -103,6 +103,8 @@ export interface MakeInfoInterface extends BuildFilesInterface, TargetInfoInterf
   tools: ToolChain;
   customMakefileRules?: CustomMakefileRulesInterface[];
   makeFlags?: string[];
+  debug?: boolean;
+  profile?: string;
 }
 
 export class ToolChain implements ToolChainInterface {
@@ -126,6 +128,21 @@ export interface ExtensionConfigurationInterface extends TargetInfoInterface, Co
   suppressMakefileWarning: boolean;
   customMakefileRules?: CustomMakefileRulesInterface[];
   makeFlags: string[];
+  defaultProfile: string;
+  profiles: {[name: string]: BuildProfileInterface};
+}
+
+export interface BuildProfileInterface {
+  debug?: boolean;
+  optimization?: string;
+  cFlags?: string[];
+  cxxFlags?: string[];
+  assemblyFlags?: string[];
+  linkerFlags?: string[];
+  cDefinitions?: string[];
+  cxxDefinitions?: string[];
+  asDefinitions?: string[];
+  makeFlags?: string[];
 }
 
 
@@ -179,6 +196,17 @@ export class ExtensionConfiguration implements ExtensionConfigurationInterface {
   public suppressMakefileWarning = false;
   public customMakefileRules: CustomMakefileRulesInterface[] | undefined = undefined;
   public makeFlags: string[] = [];
+  public defaultProfile = 'debug';
+  public profiles: {[name: string]: BuildProfileInterface} = {
+    debug: {
+      debug: true,
+      optimization: 'Og',
+    },
+    release: {
+      debug: false,
+      optimization: 'O3',
+    },
+  };
 
 
   public importRelevantInfoFromMakefile(makeInfo: MakeInfo): void {
@@ -238,4 +266,6 @@ export default class MakeInfo implements MakeInfoInterface {
   public cxxFlags: string[] = [];
   public customMakefileRules: CustomMakefileRulesInterface[] | undefined = undefined;
   public makeFlags: string[] = [];
+  public debug?: boolean = true;
+  public profile?: string = 'debug';
 }

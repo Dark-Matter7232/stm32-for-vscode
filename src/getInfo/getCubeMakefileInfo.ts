@@ -117,7 +117,7 @@ export function extractBuildSpecification(makefile: string): string[] {
   }
   return output;
 }
-type CubeMXMakefile = Omit<MakeInfo, 'tools' | 'language' | 'customMakefileRules'>;
+type CubeMXMakefile = Omit<MakeInfo, 'tools' | 'language' | 'customMakefileRules' | 'debug' | 'profile'>;
 
 
 const makeInfoPrefixes: [keyof CubeMXMakefile, string][] = [

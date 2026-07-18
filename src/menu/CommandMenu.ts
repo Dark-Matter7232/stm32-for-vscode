@@ -1,37 +1,22 @@
 import * as vscode from "vscode";
 import { forEach } from "lodash";
 
+import { parseConfigfile, readConfigFile } from '../configuration/stm32Config';
+import { formatBytes, getLatestMemoryUsage, MemoryRegionUsage } from '../buildArtifacts';
+
 export interface BuildCommandDefinition {
   label: string;
   command: string;
   explanation: string;
   arguments?: string[];
 }
-// TODO: make a release and debug section in the menu
-const buildCommand: BuildCommandDefinition = {
-  label: 'Build',
-  command: 'stm32-for-vscode.build',
-  explanation: 'Builds the firmware for the STM32 project.',
-};
-const buildReleaseCommand: BuildCommandDefinition = {
-  label: 'Build Release',
-  command: 'stm32-for-vscode.buildRelease',
-  explanation: 'Builds the firmware for the STM32 project, using the specified optimisation in the configuration file.',
-};
+interface ProfileAction {
+  action: 'build' | 'flash';
+}
 const cleanBuildCommand: BuildCommandDefinition = {
   label: 'Clean Build',
   command: 'stm32-for-vscode.cleanBuild',
   explanation: 'Performs a clean build by removing earlier build files and building from scratch.',
-};
-const flashCommand: BuildCommandDefinition = {
-  label: 'Flash STM32',
-  command: 'stm32-for-vscode.flash',
-  explanation: 'Builds and subsequently flashes the firmware to the STM32 MCU.',
-};
-const flashReleaseCommand: BuildCommandDefinition = {
-  label: 'Flash Release STM32',
-  command: 'stm32-for-vscode.flashRelease',
-  explanation: 'Builds and subsequently flashes the release firmware to the STM32 MCU.',
 };
 const debugCommand: BuildCommandDefinition = {
   label: 'Debug STM32',
@@ -55,13 +40,8 @@ const openCubeMX: BuildCommandDefinition = {
   command: 'stm32-for-vscode.openCubeMX',
   explanation: 'Opens STM32CubeMX for the current project.'
 };
-
 const COMMANDS: { [key: string]: BuildCommandDefinition } = {
-  buildCommand,
-  buildReleaseCommand,
   cleanBuildCommand,
-  flashCommand,
-  flashReleaseCommand,
   debugCommand,
   changeProgrammerCommand,
   importCubeProject,
@@ -69,21 +49,27 @@ const COMMANDS: { [key: string]: BuildCommandDefinition } = {
 };
 
 class BuildCommand extends vscode.TreeItem {
+  public children?: BuildCommand[];
   public constructor(
     label: string,
     explanation: string,
-    command: string,
+    command: string | undefined,
     collapsibleState: vscode.TreeItemCollapsibleState,
     args?: string[],
+    children?: BuildCommand[],
+    description?: string,
   ) {
     super(label, collapsibleState);
     this.tooltip = `${this.label}: ${explanation}`;
-    this.description = '';
-    this.command = {
-      command,
-      arguments: args,
-      title: label,
-    };
+    this.description = description || '';
+    this.children = children;
+    if (command) {
+      this.command = {
+        command,
+        arguments: args,
+        title: label,
+      };
+    }
   }
 }
 
@@ -96,7 +82,10 @@ export default class CommandMenuProvider implements vscode.TreeDataProvider<Buil
   public getTreeItem(element: BuildCommand): vscode.TreeItem {
     return element;
   }
-  public getChildren(): BuildCommand[] {
+  public async getChildren(element?: BuildCommand): Promise<BuildCommand[]> {
+    if (element?.children) {
+      return element.children;
+    }
     const hasBuildTools = this.context.globalState.get('hasBuildTools');
     if (!hasBuildTools) {
       setTimeout(() => {
@@ -105,7 +94,70 @@ export default class CommandMenuProvider implements vscode.TreeDataProvider<Buil
       return [];
     }
 
-    const commands: BuildCommand[] = [];
+    let profiles = ['debug', 'release'];
+    try {
+      const config = parseConfigfile(await readConfigFile());
+      profiles = Object.keys(config.profiles);
+    } catch (error) {
+      // The command view can still show the standard actions before configuration exists.
+    }
+    const profileActions = (action: ProfileAction['action']): BuildCommand[] => profiles.map((profile) => (
+      new BuildCommand(
+        profile,
+        `Builds the ${profile} profile${action === 'flash' ? ' and flashes it' : ''}.`,
+        'stm32-for-vscode.profileAction',
+        vscode.TreeItemCollapsibleState.None,
+        [action, profile],
+      )
+    ));
+    const memory = getLatestMemoryUsage();
+    const memoryChildren = memory.length > 0
+      ? memory.map((region: MemoryRegionUsage) => {
+        const used = formatBytes(region.used);
+        const size = region.size ? formatBytes(region.size) : 'unknown';
+        const percentage = region.percentage === undefined ? 'n/a' : `${region.percentage.toFixed(2)}%`;
+        return new BuildCommand(
+          region.name,
+          `${region.name}: ${used} used of ${size} (${percentage})`,
+          undefined,
+          vscode.TreeItemCollapsibleState.None,
+          undefined,
+          undefined,
+          `${used} / ${size}  ${percentage}`,
+        );
+      })
+      : [new BuildCommand(
+        'No build report available',
+        'Build a profile to see RAM and FLASH usage.',
+        undefined,
+        vscode.TreeItemCollapsibleState.None,
+      )];
+    const commands: BuildCommand[] = [
+      new BuildCommand(
+        'Build',
+        'Builds a selected STM32 profile.',
+        undefined,
+        vscode.TreeItemCollapsibleState.Collapsed,
+        undefined,
+        profileActions('build'),
+      ),
+      new BuildCommand(
+        'Flash',
+        'Builds and flashes a selected STM32 profile using OpenOCD.',
+        undefined,
+        vscode.TreeItemCollapsibleState.Collapsed,
+        undefined,
+        profileActions('flash'),
+      ),
+      new BuildCommand(
+        'Memory Usage',
+        'RAM and FLASH usage from the latest successful build.',
+        undefined,
+        vscode.TreeItemCollapsibleState.Collapsed,
+        undefined,
+        memoryChildren,
+      ),
+    ];
     forEach(COMMANDS, (command: BuildCommandDefinition) => {
       commands.push(
         new BuildCommand(
@@ -127,4 +179,3 @@ export default class CommandMenuProvider implements vscode.TreeDataProvider<Buil
     this._onDidChangeTreeData.fire(undefined);
   }
 }
-

@@ -39,6 +39,11 @@ export function createYamlArray(info: string[]): string {
  * @param config configuration to be created
  */
 export function createConfigFile(config: ExtensionConfiguration): string {
+  const profiles = Object.entries(config.profiles).map(([name, profile]) => {
+    const profileYaml = YAML.stringify(profile).trimEnd().split('\n')
+      .map((line) => `  ${line}`).join('\n');
+    return `  ${name}:\n${profileYaml}`;
+  }).join('\n');
   return (
     `# Configuration file for the STM32 for VSCode extension
 # Arrays can be inputted in two ways. One is: [entry_1, entry_2, ..., entry_final]
@@ -53,6 +58,11 @@ target: ${config.target}
 language: ${config.language}
 
 optimization: ${config.optimization}
+defaultProfile: ${config.defaultProfile}
+
+# Optional build profiles. These override the values above when selected.
+profiles:
+${profiles}
 
 # MCU settings
 targetMCU: ${config.targetMCU}

@@ -106,7 +106,7 @@ export async function checkAndConvertCpp(
  * if a project is a C or C++ project and converts accordingly.
  * @param {string} location location of the workspace
  */
-export async function getInfo(location: string): Promise<MakeInfo> {
+export async function getInfo(location: string, requestedProfile?: string): Promise<MakeInfo> {
   if (!vscode.workspace.workspaceFolders) { throw Error('No workspace folder was selected'); }
   let cubeMakefileInfo = new MakeInfo();
   try {
@@ -124,6 +124,11 @@ export async function getInfo(location: string): Promise<MakeInfo> {
   const standardConfig: ExtensionConfiguration = new ExtensionConfiguration();
   standardConfig.importRequiredInfoFromMakefile(cubeMakefileInfo);
   const projectConfiguration = await STM32ProjectConfiguration.readOrCreateConfigFile(standardConfig);
+  const profileName = requestedProfile || projectConfiguration.defaultProfile;
+  const profile = projectConfiguration.profiles[profileName];
+  if (profile) {
+    Object.assign(projectConfiguration, profile);
+  }
 
   await OpenOCDConfigFile.readOrCreateConfigFile(
     new OpenOCDConfiguration(cubeMakefileInfo.targetMCU)
@@ -203,6 +208,8 @@ export async function getInfo(location: string): Promise<MakeInfo> {
   STM32MakeInfo.mcu = cubeMakefileInfo.mcu;
   STM32MakeInfo.targetMCU = projectConfiguration.targetMCU;
   STM32MakeInfo.makeFlags = projectConfiguration.makeFlags;
+  STM32MakeInfo.profile = profileName;
+  STM32MakeInfo.debug = profile?.debug ?? profileName !== 'release';
   const buildTools = getBuildToolsFromSettings();
   STM32MakeInfo.tools = {
     ...STM32MakeInfo.tools,

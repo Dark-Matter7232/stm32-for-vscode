@@ -46,6 +46,12 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
       // should continue with 
     }
     commandMenu = addCommandMenu(context);
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        'stm32-for-vscode.refreshMenu',
+        () => commandMenu?.refresh(),
+      ),
+    );
     vscode.commands.executeCommand('setContext', 'stm32ForVSCodeReady', true);
   });
   vscode.commands.registerCommand('stm32-for-vscode.importCubeIDEProject',
@@ -96,10 +102,13 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
     await openCubeMX();
   });
   context.subscriptions.push(openCubeMXCommand);
+  const runProfileAction = async (action: 'build' | 'flash', profile: string): Promise<void> => {
+    await buildSTM({profile, flash: action === 'flash'});
+  };
   const buildCmd = vscode.commands.registerCommand(
     'stm32-for-vscode.build',
     async () => {
-      await buildSTM({});
+      await runProfileAction('build', 'debug');
 
     }
   );
@@ -108,7 +117,7 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
   const buildReleaseCmd = vscode.commands.registerCommand(
     'stm32-for-vscode.buildRelease',
     async () => {
-      await buildSTM({debug: false});
+      await runProfileAction('build', 'release');
 
     }
   );
@@ -116,9 +125,7 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
   const flashCmd = vscode.commands.registerCommand(
     'stm32-for-vscode.flash',
     async () => {
-      await buildSTM({
-        flash: true,
-      });
+      await runProfileAction('flash', 'debug');
     }
   );
   context.subscriptions.push(flashCmd);
@@ -126,10 +133,7 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
   const flashReleaseCmd = vscode.commands.registerCommand(
     'stm32-for-vscode.flashRelease',
     async () => {
-      await buildSTM({
-        flash: true,
-        debug: false,
-      });
+      await runProfileAction('flash', 'release');
     }
   );
   context.subscriptions.push(flashReleaseCmd);
@@ -139,10 +143,18 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
     async () => {
       await buildSTM({
         cleanBuild: true,
+        profile: 'debug',
       });
     }
   );
   context.subscriptions.push(cleanBuildCmd);
+  const profileActionCmd = vscode.commands.registerCommand(
+    'stm32-for-vscode.profileAction',
+    async (action: 'build' | 'flash', profile: string) => {
+      await runProfileAction(action, profile);
+    },
+  );
+  context.subscriptions.push(profileActionCmd);
   return {
     installTools: async () => { await installBuildToolsCommand(context, commandMenu); }
   };

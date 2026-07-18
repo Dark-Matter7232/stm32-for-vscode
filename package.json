@@ -1,8 +1,8 @@
 {
   "name": "stm32-for-vscode",
   "displayName": "stm32-for-vscode",
-  "description": "An extension for: setting up, compiling, uploading and debugging STM32 applications",
-  "version": "3.2.14",
+  "description": "Fork: An extension for: setting up, compiling, uploading and debugging STM32 applications",
+  "version": "3.2.24",
   "engines": {
     "vscode": "^1.44.0"
   },
@@ -122,6 +122,10 @@
       {
         "command": "stm32-for-vscode.openCubeMX",
         "title": "STM32: Open STM32CubeMX"
+      },
+      {
+        "command": "stm32-for-vscode.profileAction",
+        "title": "STM32: Run Profile Action"
       }
     ],
     "configuration": {

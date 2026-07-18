@@ -39,12 +39,31 @@ Click on the ST icon and select the command you want to run. Once this is done f
 - Add static libraries for compilation.
 - Import existing CubeIDE projects or STM32CubeMX examples.
 - Configuration automatically generated and stored in `STM32-for-VSCode.config.yaml` file.
+- Build and flash profiles shown in expandable groups in the STM32 activity view.
+- Generated artifact and memory usage reporting after successful builds.
 
 ### Build Process
 The build process uses the information of the CubeMX makefile and the `STM32-for-VSCode.config.yaml` file to search for dependencies and set flags. The makefile is optional; however, the `STM32-for-VSCode.config.yaml` will always be present when building. After it has gathered all the files and information it will check if the STM32 for VSCode specific makefile needs to be updated, if so it will update the makefile and run the make/build process.
 
 ### Configuration
 The recommended way of configuring the build (i.e., adding flags, adding files/directories) is by means of the `STM32-for-VSCode.config.yaml` file. The yaml file contains comments and explanations of each part of the file and should be self explanatory. If its use is non-obvious, or if you require additional parameters, feel free to open an issue at: https://github.com/bmd-studio/stm32-for-vscode/issues.
+
+Build profiles can be added to the same configuration file. Expand `Build` or `Flash` in the STM32 activity view to choose the profile. The existing `Build`, `Build Release`, `Flash`, and `Flash Release` commands remain available for keybindings and tasks.
+
+```yaml
+defaultProfile: debug
+profiles:
+  debug:
+    debug: true
+    optimization: Og
+  release:
+    debug: false
+    optimization: O3
+```
+
+After a successful build, the extension reports the generated ELF, HEX, BIN, MAP, and listing artifacts when present, along with ELF-derived flash and RAM usage.
+
+The STM32 activity view also shows the latest RAM and FLASH usage, including used size, configured linker-region size, and percentage used. Values are displayed in bytes, KiB, or MiB as appropriate. `Clean Build` clears the displayed memory report immediately; a successful rebuild replaces it with the new report.
 
 ### Importing
 STM32CubeIDE and ST provided example projects can now be imported by using the: "import CubeIDEProject" command. Do note that the project folder should be open in the workspace.
