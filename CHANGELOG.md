@@ -1,6 +1,9 @@
 # Changelog
 
 ## [Unreleased]
+
+## [4.0.0] - 2026-07-18
+
 ### Added
   - Rebranded the project as STM32 for VS Code Community, the community-maintained successor to the original extension.
   - Added unified ELF/MAP memory analysis with expandable regions, sections, symbols, usage visualization, sorting, filtering, and source navigation.
