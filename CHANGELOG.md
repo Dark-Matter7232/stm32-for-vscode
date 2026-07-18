@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixed
+  - Linux build-tool installation now uses the native package names for each supported distribution and asks users to install GNU Make manually on unsupported distributions.
+
 ## [4.0.0] - 2026-07-18
 
 ### Added

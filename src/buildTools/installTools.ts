@@ -1,6 +1,7 @@
 import * as decompress from 'decompress';
 import * as path from 'path';
 import * as process from 'process';
+import { readFileSync } from 'fs';
 
 import * as vscode from 'vscode';
 
@@ -30,6 +31,7 @@ import { exec } from 'child_process';
 import executeTask from '../HandleTasks';
 import { platform } from 'process';
 import { which } from '../Helpers';
+import { getLinuxDistributionId, getLinuxMakeInstallPlan } from './linuxPackageManager';
 
 type XpmInstallType = Promise<void>;
 
@@ -120,14 +122,27 @@ export async function installMake(toolsStoragePath: vscode.Uri, npx: string): Pr
       return xpmInstall(toolsStoragePath, npx, win32XPMMakeDefinition);
     } break;
     case "linux": {
-      let cmd = makeDefinition.installation.linux as string | string[];
-      let linuxExecutable = Array.isArray(cmd) ? cmd : [cmd];
-      /**
-       * It is essential to run update if the extension is installed in devcontainer. Otherwise
-       * encounter the error `E: Unable to locate package build-essential`
-       */
-      await executeTask('shell', 'update package lists', ['sudo', '-S apt-get update'], {});
-      await executeTask('shell', 'install make', linuxExecutable, {});
+      let osRelease = '';
+      try {
+        osRelease = readFileSync('/etc/os-release', 'utf8');
+      } catch (_error) {
+        // Fall through to the manual installation guidance below.
+      }
+
+      const distributionId = getLinuxDistributionId(osRelease);
+      const packageManager = distributionId && (which('dnf') ? 'dnf' : which('yum') ? 'yum' : undefined);
+      const installPlan = getLinuxMakeInstallPlan(distributionId, packageManager);
+      if (!installPlan || !which(installPlan.packageManager)) {
+        vscode.window.showWarningMessage(
+          'GNU Make is required. This Linux distribution is not supported for automatic installation. '
+          + 'Please install GNU Make with your distribution\'s package manager, then run the build-tools check again.'
+        );
+        return;
+      }
+
+      for (const command of installPlan.commands) {
+        await executeTask('shell', `install make (${installPlan.packageManager})`, command, {});
+      }
       return;
     } break;
   }
