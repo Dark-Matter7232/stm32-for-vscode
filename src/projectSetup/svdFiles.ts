@@ -1,23 +1,15 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import axios from 'axios';
 
-const SVDFilesURL = 'https://api.github.com/repos/posborne/cmsis-svd/contents/data/STMicro';
+const REPO = 'modm-io/cmsis-svd-stm32';
+const TREE_URL = `https://api.github.com/repos/${REPO}/git/trees/main?recursive=1`;
+const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/main`;
 
-interface GithubFileResponse {
-  name: string;
-  path: string;
-  sha: string;
-  size: number;
-  url: string;
-  html_url: string;
-  git_url: string;
-  download_url: string;
-  type: string;
-  _links: {
-    self: string;
-    git: string;
-    html: string;
-  }
+interface GithubTreeResponse {
+  tree: {
+    path: string;
+    type: 'blob' | 'tree';
+  }[];
 }
 
 export interface SVDFile {
@@ -25,15 +17,19 @@ export interface SVDFile {
   download_url: string;
 }
 export async function getSVDFileList(): Promise<SVDFile[]> {
-  const response = await axios.get(SVDFilesURL);
-  if (response.status === 200) {
-    const files = response.data.map((responseFile: GithubFileResponse) => (
-      { name: responseFile.name, download_url: responseFile.download_url }
-    ));
-    return files;
-  } else {
-    throw new Error('Could not get SVD Files from GitHub');
+  const response = await axios.get<GithubTreeResponse>(TREE_URL);
+  if (response.status !== 200) {
+    throw new Error('Could not get SVD files from GitHub');
   }
+
+  return response.data.tree
+    .filter(entry =>
+      entry.type === 'blob'
+      && entry.path.toLowerCase().endsWith('.svd'))
+    .map(entry => ({
+      name: entry.path.split('/').pop()!,
+      download_url: `${RAW_BASE}/${entry.path}`,
+    }));
 }
 
 export interface SVDLocalFile {
