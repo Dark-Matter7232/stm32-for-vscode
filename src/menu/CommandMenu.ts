@@ -41,12 +41,18 @@ const openCubeMX: BuildCommandDefinition = {
   command: 'stm32-for-vscode.openCubeMX',
   explanation: 'Opens STM32CubeMX for the current project.'
 };
+const openPeripheralViewer: BuildCommandDefinition = {
+  label: 'Open Peripheral Viewer',
+  command: 'stm32-for-vscode.openPeripheralViewer',
+  explanation: 'Opens the native Cortex-Debug XPERIPHERALS view for the active debug session.',
+};
 const COMMANDS: { [key: string]: BuildCommandDefinition } = {
   cleanBuildCommand,
   debugCommand,
   changeProgrammerCommand,
   importCubeProject,
-  openCubeMX
+  openCubeMX,
+  openPeripheralViewer,
 };
 
 class BuildCommand extends vscode.TreeItem {

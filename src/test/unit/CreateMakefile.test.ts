@@ -49,4 +49,22 @@ suite('CreateMakefile', () => {
     expect(makefileOutput).to.contain(customMakefileRules[0].rule);
   });
 
+  test('uses the configured optimization for both build profiles', () => {
+    const makeInfo = new MakeInfo();
+    makeInfo.optimization = 'O2';
+    const makefileOutput = createMakefile(makeInfo);
+    expect(makefileOutput).to.contain(
+      'OPTIMIZATION_FLAG = $(if $(filter -%,$(OPTIMIZATION)),$(OPTIMIZATION),-$(OPTIMIZATION))'
+    );
+    expect(makefileOutput).to.contain('OPTIMIZATION_FLAGS += $(OPTIMIZATION_FLAG) -g -gdwarf -ggdb -DDEBUG');
+    expect(makefileOutput).to.contain('OPTIMIZATION_FLAGS += $(OPTIMIZATION_FLAG)\n');
+    expect(makefileOutput).to.not.contain('OPTIMIZATION_FLAGS += -Og');
+  });
+
+  test('uses a response file for the object list', () => {
+    const makefileOutput = createMakefile(new MakeInfo());
+    expect(makefileOutput).to.contain('$(file >$@.in,$(foreach obj,$(OBJECTS),$(obj)$(\\n)))');
+    expect(makefileOutput).to.contain('@$@.in $(LDFLAGS) -o $@');
+  });
+
 });

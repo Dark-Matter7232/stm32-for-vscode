@@ -79,6 +79,11 @@ profiles:
     optimization: O3
 ```
 
+Set `optimization` to the desired GCC level (`O0`, `O1`, `O2`, `O3`, `Os`, or
+`Og`) in each profile. The selected profile value is used for that build;
+debug builds additionally include debug information flags. You can also pass
+`OPTIMIZATION=O2` or `OPTIMIZATION=-O2` to Make.
+
 The `Build` and `Flash` groups in the activity view expand to show the configured profiles. Existing `Build`, `Build Release`, `Flash`, and `Flash Release` commands remain available for tasks and keybindings.
 
 ## Build artifacts and memory usage
@@ -126,6 +131,15 @@ Expand a region to view its linker sections, then expand a section to view its s
 - Selection controls and collapse-all behavior.
 
 The analyzer refreshes automatically after a successful build. Source navigation requires debug information in the ELF and source paths that are available to VS Code.
+
+When a generated Cortex-Debug launch configuration does not already specify an
+SVD file, the extension downloads the matching STM32 CMSIS-SVD file and adds it
+to the workspace configuration. The same path is supplied as both `svdFile`
+and `svdPath`, allowing Cortex-Debug and the XPERIPHERALS/mcu-debug viewer to
+use the file. A manually supplied SVD value is preserved.
+
+The activity view also provides **Open Peripheral Viewer**, which focuses the
+native Cortex-Debug XPERIPHERALS view when a debug session is active.
 
 ## Configuration
 

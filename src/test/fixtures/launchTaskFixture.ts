@@ -28,10 +28,11 @@ export default ([debugFixture, attachFixture]);
 export const debugFixtureWithSVD = {
   ...debugFixture,
   svdFile: 'STM32H743x.svd',
+  svdPath: 'STM32H743x.svd',
 };
 
 export const attachFixtureWithSVD = {
   ...attachFixture,
   svdFile: 'STM32H743x.svd',
+  svdPath: 'STM32H743x.svd',
 };
-

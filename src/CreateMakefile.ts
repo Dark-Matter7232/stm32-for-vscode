@@ -177,7 +177,7 @@ BUILD_DIRECTORY ?= build
 # Optimization
 ######################################
 # Optimization is switched based upon the DEBUG variable. If set to 1
-# it will be build in debug mode with the Og optimization flag (optimized for debugging).
+# it will be built in debug mode with the configured optimization flag.
 # If set to 0 (false) then by default the variable is used in the configuration yaml
 # This can also be overwritten using the environment variable or by overwriting it
 # by calling make with the OPTIMIZATION variable e.g.:
@@ -188,15 +188,16 @@ DEBUG ?= 1
 
 # debug flags when debug is defined
 OPTIMIZATION ?= ${createPrefixWhenNoneExists(makeInfo.optimization, '-')}
+OPTIMIZATION_FLAG = $(if $(filter -%,$(OPTIMIZATION)),$(OPTIMIZATION),-$(OPTIMIZATION))
 
 RELEASE_DIRECTORY = $(BUILD_DIRECTORY)/debug
 ifeq ($(DEBUG),1)
-  # Sets debugging optimization -Og and the debug information output
-  OPTIMIZATION_FLAGS += -Og -g -gdwarf -ggdb -DDEBUG
+  # Sets the configured debugging optimization and debug information output
+  OPTIMIZATION_FLAGS += $(OPTIMIZATION_FLAG) -g -gdwarf -ggdb -DDEBUG
   $(TARGET) := $(TARGET)-debug
   RELEASE_DIRECTORY := $(BUILD_DIRECTORY)/debug
 else
-  OPTIMIZATION_FLAGS += $(OPTIMIZATION)
+  OPTIMIZATION_FLAGS += $(OPTIMIZATION_FLAG)
   $(TARGET) := $(TARGET)-release
   RELEASE_DIRECTORY := $(BUILD_DIRECTORY)/release
 endif

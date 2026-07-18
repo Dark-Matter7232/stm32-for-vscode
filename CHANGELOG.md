@@ -4,6 +4,10 @@
 
 ### Fixed
   - Linux build-tool installation now uses the native package names for each supported distribution and asks users to install GNU Make manually on unsupported distributions.
+  - Debug builds now honor the selected profile optimization instead of always forcing `-Og`, and Make accepts both `O2` and `-O2` overrides.
+  - Restored automatic STM32 CMSIS-SVD discovery for generated Cortex-Debug configurations and peripheral/register viewing.
+  - Added an activity-bar command to focus the native Cortex-Debug XPERIPHERALS view.
+  - Confirmed generated link commands use response files for large object lists, avoiding shell command-length limits.
 
 ## [4.0.0] - 2026-07-18
 

@@ -11,8 +11,8 @@ export function getCortexDevice(info: MakefileInfo): string {
 
 
 
-export default function getLaunchTask(info: MakefileInfo): TaskDefinition {
-  const config = {
+export default function getLaunchTask(info: MakefileInfo, svdFile?: string): TaskDefinition {
+  const config: TaskDefinition = {
     showDevDebugOutput: 'parsed',
     // eslint-disable-next-line no-template-curly-in-string
     cwd: '${workspaceRoot}',
@@ -27,11 +27,15 @@ export default function getLaunchTask(info: MakefileInfo): TaskDefinition {
       'openocd.cfg',
     ],
   };
+  if (svdFile) {
+    config.svdFile = svdFile;
+    config.svdPath = svdFile;
+  }
   return config;
 }
 
-export function getAttachTask(info: MakefileInfo): TaskDefinition {
-  const attachTask = getLaunchTask(info);
+export function getAttachTask(info: MakefileInfo, svdFile?: string): TaskDefinition {
+  const attachTask = getLaunchTask(info, svdFile);
   attachTask.name = 'Attach STM32';
   attachTask.request = 'attach';
   return attachTask;

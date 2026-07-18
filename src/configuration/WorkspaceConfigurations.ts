@@ -27,14 +27,16 @@
  * tasks.
  */
 
-import { TaskDefinition, Uri, WorkspaceConfiguration, workspace } from 'vscode';
-import getLaunchTask, { getAttachTask } from './LaunchTasksConfig';
+import { TaskDefinition, Uri, WorkspaceConfiguration, window, workspace } from 'vscode';
+import getLaunchTask, { getAttachTask, getCortexDevice } from './LaunchTasksConfig';
 
 import MakeInfo from '../types/MakeInfo';
 import buildTasks from './BuildTasksConfig';
 import { isEmpty } from 'lodash';
 import setCortexDebugWorkspaceConfiguration from './cortexDebugConfig';
 import updateCProperties from './CCCPConfig';
+import { writeFileInWorkspace } from '../Helpers';
+import { getSVDFileForChip } from '../projectSetup/svdFiles';
 
 /**
  * Function for updating the launch.json file to include debugging information.
@@ -45,39 +47,61 @@ export async function updateLaunch(
   workspacePathUri: Uri, info: MakeInfo): Promise<void> {
   const launchFile = workspace.getConfiguration('launch', workspacePathUri);
   const launchConfig: TaskDefinition[] = launchFile.get('configurations', []);
-  const config = getLaunchTask(info);
-  const attachTask = getAttachTask(info);
-  const hasLaunchTask = !!launchConfig.find(task => task.name === config.name);
-  const hasAttachTask = !!launchConfig.find(task => task.name === attachTask.name);
-  // if (!hasLaunchTask || !hasAttachTask) {
-  // try {
-  // FIXME: need to add SVD functionality again
-  // const svdFile = await getSVDFileForChip(getCortexDevice(info));
-  // writeFileInWorkspace(workspacePathUri, svdFile.name, svdFile.data);
-  //   const deviceName = getCortexDevice(info);
+  const existingLaunchTask = launchConfig.find(task => task.name === 'Debug STM32');
+  const existingAttachTask = launchConfig.find(task => task.name === 'Attach STM32');
+  let svdFile: string | undefined = existingLaunchTask?.svdFile || existingLaunchTask?.svdPath
+    || existingAttachTask?.svdFile || existingAttachTask?.svdPath;
 
-  //   config.deviceName = deviceName;
-  //   attachTask.deviceName = deviceName;
-  // } catch (err) {
-  //   window.showErrorMessage(
-  //     `Could not find SVD file for the current device: ${getCortexDevice(info)}. 
-  //     If you want to use it for debugging, look for it at: https://www.st.com/,
-  //     and add the file name to the .svdFile option in the launch.json configurations.`);
-  //   // eslint-disable-next-line no-console
-  //   console.error(`Could not find an SVD file for the chip ${getCortexDevice(info)}`);
-  //   // eslint-disable-next-line no-console
-  //   console.error(err);
-  // }
-  // }
+  if (!existingLaunchTask?.svdFile && !existingLaunchTask?.svdPath
+    && !existingAttachTask?.svdFile && !existingAttachTask?.svdPath) {
+    try {
+      const downloadedSvdFile = await getSVDFileForChip(getCortexDevice(info));
+      await writeFileInWorkspace(workspacePathUri, downloadedSvdFile.name, downloadedSvdFile.data);
+      svdFile = downloadedSvdFile.name;
+    } catch (err) {
+      window.showWarningMessage(
+        `Could not find an SVD file for ${getCortexDevice(info)}. Add an SVD file and set `
+        + '`svdFile` in launch.json to enable the Cortex-Debug peripheral view.'
+      );
+      // eslint-disable-next-line no-console
+      console.error(`Could not find an SVD file for the chip ${getCortexDevice(info)}`, err);
+    }
+  }
+
+  const config = existingLaunchTask || getLaunchTask(info, svdFile);
+  const attachTask = existingAttachTask || getAttachTask(info, svdFile);
+  let shouldUpdateLaunchConfiguration = false;
+  if (svdFile) {
+    if (!config.svdFile) {
+      config.svdFile = svdFile;
+      shouldUpdateLaunchConfiguration = true;
+    }
+    if (!config.svdPath) {
+      config.svdPath = svdFile;
+      shouldUpdateLaunchConfiguration = true;
+    }
+    if (!attachTask.svdFile) {
+      attachTask.svdFile = svdFile;
+      shouldUpdateLaunchConfiguration = true;
+    }
+    if (!attachTask.svdPath) {
+      attachTask.svdPath = svdFile;
+      shouldUpdateLaunchConfiguration = true;
+    }
+  }
+  const hasLaunchTask = !!existingLaunchTask;
+  const hasAttachTask = !!existingAttachTask;
 
   if (!hasLaunchTask) {
     launchConfig.push(config);
+    shouldUpdateLaunchConfiguration = true;
   }
   if (!hasAttachTask) {
     launchConfig.push(attachTask);
+    shouldUpdateLaunchConfiguration = true;
   }
-  // only change the launch configuration when none is present
-  if (!hasLaunchTask || !hasAttachTask) {
+  // Persist newly generated configurations and newly discovered SVD paths.
+  if (shouldUpdateLaunchConfiguration) {
     await launchFile.update('configurations', launchConfig);
   }
 }
