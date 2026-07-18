@@ -37,6 +37,7 @@ const config = {
     // the bundle is stored in the 'dist' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
     path: path.resolve(__dirname, 'dist'),
     filename: 'extension.js',
+    chunkFilename: '[id].js',
     libraryTarget: 'commonjs2',
   },
   devtool: 'source-map',
@@ -46,6 +47,11 @@ const config = {
   resolve: {
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: ['.ts', '.js'],
+  },
+  optimization: {
+    splitChunks: {
+      chunks: 'async',
+    },
   },
   module: {
     rules: [
@@ -64,12 +70,12 @@ const config = {
     }),
     new LodashModuleReplacementPlugin,
     process.env.RSDOCTOR &&
-      new RsdoctorRspackPlugin({
-        // plugin options
-        supports: {
-          generateTileGraph: true,
-        }
-      }),
+    new RsdoctorRspackPlugin({
+      // plugin options
+      supports: {
+        generateTileGraph: true,
+      }
+    }),
   ],
 };
 module.exports = config;

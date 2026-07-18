@@ -29,11 +29,7 @@ import * as vscode from 'vscode';
 
 import CommandMenu from './menu/CommandMenu';
 import addCommandMenu from './menu';
-import buildSTM from './BuildTask';
 import { checkBuildTools } from './buildTools';
-import { openCubeMX } from './CubeMX';
-import importAndSetupCubeIDEProject from './import';
-import { installBuildToolsCommand } from './buildTools/installTools';
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -54,15 +50,18 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
     );
     vscode.commands.executeCommand('setContext', 'stm32ForVSCodeReady', true);
   });
-  vscode.commands.registerCommand('stm32-for-vscode.importCubeIDEProject',
+  const importCubeIDEProjectCommand = vscode.commands.registerCommand(
+    'stm32-for-vscode.importCubeIDEProject',
     async () => {
       try {
+        const { default: importAndSetupCubeIDEProject } = await import('./import');
         await importAndSetupCubeIDEProject();
       } catch (error) {
         vscode.window.showErrorMessage(`Something went wrong with importing the CubeIDE project: ${error}`);
       }
     }
   );
+  context.subscriptions.push(importCubeIDEProjectCommand);
   const setProgrammerCommand = vscode.commands.registerCommand(
     'stm32-for-vscode.setProgrammer',
     (programmer?: string
@@ -79,6 +78,7 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
   });
   context.subscriptions.push(openExtension);
   const installBuildTools = vscode.commands.registerCommand('stm32-for-vscode.installBuildTools', async () => {
+    const { installBuildToolsCommand } = await import('./buildTools/installTools');
     await installBuildToolsCommand(context, commandMenu);
     // try {
     //   await installAllTools(context);
@@ -99,10 +99,12 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
   context.subscriptions.push(buildToolsCommand);
 
   const openCubeMXCommand = vscode.commands.registerCommand("stm32-for-vscode.openCubeMX", async () => {
+    const { openCubeMX } = await import('./CubeMX');
     await openCubeMX();
   });
   context.subscriptions.push(openCubeMXCommand);
   const runProfileAction = async (action: 'build' | 'flash', profile: string): Promise<void> => {
+    const { default: buildSTM } = await import('./BuildTask');
     await buildSTM({profile, flash: action === 'flash'});
   };
   const buildCmd = vscode.commands.registerCommand(
@@ -141,6 +143,7 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
   const cleanBuildCmd = vscode.commands.registerCommand(
     'stm32-for-vscode.cleanBuild',
     async () => {
+      const { default: buildSTM } = await import('./BuildTask');
       await buildSTM({
         cleanBuild: true,
         profile: 'debug',
@@ -156,6 +159,7 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
   );
   context.subscriptions.push(profileActionCmd);
   return {
-    installTools: async () => { await installBuildToolsCommand(context, commandMenu); }
+    installTools: async () => { const { installBuildToolsCommand } = await import('./buildTools/installTools');
+    await installBuildToolsCommand(context, commandMenu); }
   };
 }
