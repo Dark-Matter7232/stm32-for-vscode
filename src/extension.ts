@@ -86,26 +86,6 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
       await openAnalyzer(focusRegion);
     });
   context.subscriptions.push(openMemoryAnalyzer);
-  const openPeripheralViewer = vscode.commands.registerCommand(
-    'stm32-for-vscode.openPeripheralViewer', async () => {
-      if (!vscode.extensions.getExtension('mcu-debug.peripheral-viewer')) {
-        vscode.window.showWarningMessage(
-          'The native peripheral viewer is not available. Install Cortex-Debug with its peripheral viewer dependency.'
-        );
-        return;
-      }
-      try {
-        await vscode.commands.executeCommand(
-          'workbench.action.focusView',
-          'mcu-debug.peripheral-viewer.svd',
-        );
-      } catch (error) {
-        vscode.window.showInformationMessage(
-          'Start a Cortex-Debug session with an SVD file to open the native XPERIPHERALS view.'
-        );
-      }
-    });
-  context.subscriptions.push(openPeripheralViewer);
   const installBuildTools = vscode.commands.registerCommand('stm32-for-vscode.installBuildTools', async () => {
     const { installBuildToolsCommand } = await import('./buildTools/installTools');
     await installBuildToolsCommand(context, commandMenu);

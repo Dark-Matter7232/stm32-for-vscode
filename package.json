@@ -137,10 +137,6 @@
       {
         "command": "stm32-for-vscode.openMemoryAnalyzer",
         "title": "STM32: Open Memory Analyzer"
-      },
-      {
-        "command": "stm32-for-vscode.openPeripheralViewer",
-        "title": "STM32: Open Peripheral Viewer"
       }
     ],
     "configuration": {
