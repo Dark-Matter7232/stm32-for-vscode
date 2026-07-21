@@ -4,7 +4,7 @@ STM32 for VS Code Community is the community-maintained successor to the origina
 
 It provides a Makefile-based workflow for configuring, building, flashing, and debugging STM32 projects in Visual Studio Code. It works with STM32CubeMX, the GNU Arm toolchain, Make, OpenOCD, and Cortex-Debug.
 
-The project is maintained by [Dark-Matter7232](https://github.com/Dark-Matter7232). It preserves the original extension's workflow while adding continued maintenance, build profiles, artifact reporting, diagnostics, and a full ELF/MAP memory analyzer.
+The project is maintained by [Dark-Matter7232](https://github.com/Dark-Matter7232). It preserves the original extension's workflow while adding continued maintenance, build profiles, artifact reporting, diagnostics, automatic SVD configuration, and a full ELF/MAP memory analyzer.
 
 ![Build demo](./media/stm32-for-vscode-build.gif)
 
@@ -27,6 +27,7 @@ Existing project configuration remains compatible. The `STM32-for-VSCode.config.
 - Import STM32CubeIDE projects and STM32CubeMX examples.
 - Detect and install the GNU Arm toolchain, Make, and OpenOCD when desired.
 - Configure IntelliSense for C and C++ projects.
+- Automatically download and configure the matching STM32 CMSIS-SVD file for Cortex-Debug when needed.
 - Support C++ projects by adding or renaming the application entry point to `main.cpp`.
 - Report generated ELF, HEX, BIN, MAP, and listing artifacts after successful builds.
 - Display RAM and FLASH usage in the STM32 activity view.
@@ -132,14 +133,13 @@ Expand a region to view its linker sections, then expand a section to view its s
 
 The analyzer refreshes automatically after a successful build. Source navigation requires debug information in the ELF and source paths that are available to VS Code.
 
+## Automatic SVD Configuration
+
 When a generated Cortex-Debug launch configuration does not already specify an
 SVD file, the extension downloads the matching STM32 CMSIS-SVD file and adds it
 to the workspace configuration. The same path is supplied as both `svdFile`
 and `svdPath`, allowing Cortex-Debug and the XPERIPHERALS/mcu-debug viewer to
 use the file. A manually supplied SVD value is preserved.
-
-The activity view also provides **Open Peripheral Viewer**, which focuses the
-native Cortex-Debug XPERIPHERALS view when a debug session is active.
 
 ## Configuration
 

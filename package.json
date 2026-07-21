@@ -8,15 +8,16 @@
   },
   "license": "MIT",
   "author": {
-    "name": "Dark-Matter7232",
-    "url": "https://github.com/Dark-Matter7232"
+    "name": "Anurag Rai",
+    "url": "https://anuragrai.cv"
   },
   "icon": "media/STM32-for-VSCode-logo.png",
   "keywords": [
     "STM32",
     "stm",
     "Nucleo",
-    "CubeMX"
+    "CubeMX",
+    "st-link"
   ],
   "publisher": "dark-matter7232",
   "repository": {
@@ -28,7 +29,8 @@
   },
   "homepage": "https://github.com/Dark-Matter7232/stm32-for-vscode#readme",
   "categories": [
-    "Other"
+    "Debuggers",
+    "Programming Languages"
   ],
   "activationEvents": [
     "onCommand:stm32-for-vscode.build",
