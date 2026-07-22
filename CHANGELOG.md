@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [4.0.2] - 2026-07-22
+
+### Fixed
+  - Fixed a regression where generated build profiles produced invalid YAML, causing `YAMLParseError: Map keys must be unique`.
+
 ## [4.0.1] - 2026-07-21
 
 ### Fixed
