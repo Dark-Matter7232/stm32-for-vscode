@@ -41,7 +41,7 @@ export function createYamlArray(info: string[]): string {
 export function createConfigFile(config: ExtensionConfiguration): string {
   const profiles = Object.entries(config.profiles).map(([name, profile]) => {
     const profileYaml = YAML.stringify(profile).trimEnd().split('\n')
-      .map((line) => `  ${line}`).join('\n');
+      .map((line) => `    ${line}`).join('\n');
     return `  ${name}:\n${profileYaml}`;
   }).join('\n');
   return (
