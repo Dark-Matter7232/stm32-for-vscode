@@ -106,7 +106,7 @@
       },
       {
         "command": "stm32-for-vscode.cleanBuild",
-        "title": "STM32: Build clean STM32 project"
+        "title": "STM32: Clean STM32 build artifacts"
       },
       {
         "command": "stm32-for-vscode.installBuildTools",

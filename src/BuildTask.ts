@@ -174,23 +174,17 @@ async function checkForRequirements():Promise<BuildRequirements> {
 }
 
 async function cleanBuildTask(makeArguments: string, makePath: string| boolean): Promise<void> {
-  try {
-    await executeTask(
-      'build',
-      'STM32 clean',
-      [
-        `${makePath}`,
-        makeArguments,
-        `clean`
-      ],
-      {},
-      "$gcc"
-    );
-  } catch (err) {
-    const errorMsg = `Something went wrong with cleaning the build. Still are going to proceed to building.
-        ERROR: ${err}`;
-    window.showErrorMessage(errorMsg);
-  }
+  await executeTask(
+    'build',
+    'STM32 clean',
+    [
+      `${makePath}`,
+      makeArguments,
+      `clean`
+    ],
+    {},
+    "$gcc"
+  );
 }
 
 export default async function buildSTM(options?: {
@@ -230,8 +224,11 @@ export default async function buildSTM(options?: {
 
     const makeArguments = `-j${concurrentJobs}${makeFlags} -f ${makefileName}`;
     if (cleanBuild) {
+      // Clean is intentionally standalone: equivalent to `make clean`, with
+      // no subsequent compile, flash, or artifact analysis.
+      await cleanBuildTask(`-f ${makefileName}`, info.tools.makePath);
       await clearLatestMemoryUsage();
-      await cleanBuildTask(makeArguments, info.tools.makePath);
+      return;
     }
 
 

@@ -29,7 +29,7 @@ export function getBuildTask(): TaskDefinition {
  */
 export function getCleanBuildTask(): TaskDefinition {
   const buildTask = {
-    label: 'Build Clean STM',
+    label: 'Clean STM32',
     type: 'process',
     // eslint-disable-next-line no-template-curly-in-string
     command: '${command:stm32-for-vscode.cleanBuild}',

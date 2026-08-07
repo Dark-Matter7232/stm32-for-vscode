@@ -155,7 +155,6 @@ export function activate(context: vscode.ExtensionContext): { installTools: () =
       const { default: buildSTM } = await import('./BuildTask');
       await buildSTM({
         cleanBuild: true,
-        profile: 'debug',
       });
     }
   );

@@ -15,9 +15,9 @@ interface ProfileAction {
   action: 'build' | 'flash';
 }
 const cleanBuildCommand: BuildCommandDefinition = {
-  label: 'Clean Build',
+  label: 'Clean',
   command: 'stm32-for-vscode.cleanBuild',
-  explanation: 'Performs a clean build by removing earlier build files and building from scratch.',
+  explanation: 'Runs make clean and removes earlier build files without compiling.',
 };
 const debugCommand: BuildCommandDefinition = {
   label: 'Debug STM32',

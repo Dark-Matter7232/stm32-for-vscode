@@ -16,7 +16,7 @@ export const buildSTMTask: TaskDefinition = {
   ],
 };
 export const buildCleanSTMTask: TaskDefinition = {
-  label: 'Build Clean STM',
+  label: 'Clean STM32',
   type: 'process',
   command: '${command:stm32-for-vscode.cleanBuild}',
   options: {
