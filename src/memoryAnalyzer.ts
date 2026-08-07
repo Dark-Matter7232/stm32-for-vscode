@@ -1,5 +1,6 @@
 /* eslint-disable max-len */
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { execFile } from 'child_process';
 
@@ -113,23 +114,40 @@ export function parseMapFile(content: string): {
 
 export function parseNmOutput(output: string): MemoryAnalyzerSymbol[] {
   return output.split(/\r?\n/).flatMap((line) => {
-    const match = line.match(/^\s*([0-9a-f]+)\s+([0-9a-f]+)?\s+(\S)\s+(.+)$/i);
+    // Keep the same field layout as the reference parser. GNU nm omits the
+    // size field for some linker-generated symbols and separates source
+    // metadata with a tab rather than a space.
+    const match = line.match(/^([0-9A-Fa-f]+)\s+([0-9A-Fa-f]+)?\s*\w\s+([^\t]*)\t*(\S*)/);
     if (!match) {
       return [];
     }
-    // `nm -C` may put spaces in a demangled symbol name. Only the final
-    // file:line token is metadata; everything before it is the symbol name.
-    const location = match[4].match(/\s+(\S+):(\d+)$/);
-    const name = (location ? match[4].slice(0, match[4].length - location[0].length) : match[4]).trim();
-    const size = numberFromHex(match[2] || '0');
+    let name = match[3].trim();
+    let sourceFile: string | undefined;
+    let sourceLine: number | undefined;
+    const tabLocation = match[4].match(/^(.*):(\d+)$/);
+    if (tabLocation) {
+      sourceFile = tabLocation[1];
+      sourceLine = Number(tabLocation[2]);
+    }
+    // Some nm versions separate the source location with spaces instead of
+    // a tab. Accept that form too while retaining the reference field layout.
+    if (!tabLocation) {
+      const inlineLocation = name.match(/\s+(\S+):(\d+)$/);
+      if (inlineLocation) {
+        name = name.slice(0, name.length - inlineLocation[0].length).trim();
+        sourceFile = inlineLocation[1];
+        sourceLine = Number(inlineLocation[2]);
+      }
+    }
+    const size = Number.isNaN(Number.parseInt(match[2] || '', 16)) ? 0 : numberFromHex(match[2] || '0');
     return [{
       name,
       address: numberFromHex(match[1]),
       size,
-      type: match[3],
-      source: location ? `${location[1]}:${location[2]}` : undefined,
-      sourceFile: location ? location[1] : undefined,
-      sourceLine: location ? Number(location[2]) : undefined,
+      type: line.match(/^[0-9A-Fa-f]+\s+(?:[0-9A-Fa-f]+\s+)?(\w)/)?.[1] || '',
+      source: sourceFile !== undefined ? `${sourceFile}:${sourceLine}` : undefined,
+      sourceFile,
+      sourceLine,
     }];
   });
 }
@@ -137,10 +155,18 @@ export function parseNmOutput(output: string): MemoryAnalyzerSymbol[] {
 export function parseObjdumpSections(output: string): MemoryAnalyzerSection[] {
   const lines = output.split(/\r?\n/);
   const sections: MemoryAnalyzerSection[] = [];
-  const header = /^\s*\d+\s+(\S+)\s+([0-9a-f]+)\s+([0-9a-f]+)\s+([0-9a-f]+)/i;
-  for (let index = 0; index < lines.length - 1; index += 1) {
-    const match = header.exec(lines[index]);
-    if (!match || !/\bALLOC\b/.test(lines[index + 1])) {
+  // Keep the same state machine as the reference parser: an ALLOC flags line
+  // belongs to the most recent section header, even if objdump inserts an
+  // additional line between them.
+  const header = /^\s*\d+\s+([\.\w]+)\s+([0-9a-f]+)\s+([0-9a-f]+)\s+([0-9a-f]+)/i;
+  let previousLine = '';
+  for (const line of lines) {
+    if (!/\bALLOC\b/.test(line)) {
+      previousLine = line;
+      continue;
+    }
+    const match = header.exec(previousLine);
+    if (!match) {
       continue;
     }
     const size = numberFromHex(match[2]);
@@ -172,12 +198,42 @@ function runTool(executable: string, args: string[]): Promise<string | undefined
   });
 }
 
+async function withElfCopy<T>(elfPath: string, analyze: (safeElfPath: string) => Promise<T>): Promise<T> {
+  let tempDir: string | undefined;
+  let safeElfPath = elfPath;
+  try {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'stm32-memory-analyzer-'));
+    safeElfPath = path.join(tempDir, path.basename(elfPath));
+    fs.writeFileSync(safeElfPath, fs.readFileSync(elfPath));
+  } catch (error) {
+    if (tempDir) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+      tempDir = undefined;
+    }
+  }
+
+  try {
+    return await analyze(safeElfPath);
+  } finally {
+    if (tempDir) {
+      try {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      } catch (error) {
+        // Analysis has already completed; cleanup failure must not hide it.
+      }
+    }
+  }
+}
+
 export async function analyzeBuild(elfPath: string, mapPath: string | undefined, toolchainPath: string | boolean): Promise<MemoryAnalyzerReport> {
   const map = mapPath && fs.existsSync(mapPath) ? parseMapFile(fs.readFileSync(mapPath, 'utf8')) : { regions: [], sections: [] };
-  const objdumpOutput = await runTool(toolPath(toolchainPath, 'arm-none-eabi-objdump'), ['-h', elfPath]);
+  const toolOutput = await withElfCopy(elfPath, async (safeElfPath) => ({
+    objdump: await runTool(toolPath(toolchainPath, 'arm-none-eabi-objdump'), ['-h', safeElfPath]),
+    nm: await runTool(toolPath(toolchainPath, 'arm-none-eabi-nm'), ['-C', '-S', '-n', '-l', '--defined-only', safeElfPath]),
+  }));
   // The reference view is ELF-driven. If objdump is unavailable it shows no
   // section/symbol hierarchy rather than inventing one from map-file text.
-  const elfSections = objdumpOutput ? parseObjdumpSections(objdumpOutput) : [];
+  const elfSections = toolOutput.objdump ? parseObjdumpSections(toolOutput.objdump) : [];
   const sections: MemoryAnalyzerSection[] = [];
   map.regions.forEach((region) => { region.used = 0; });
   elfSections.forEach((section) => {
@@ -191,7 +247,7 @@ export async function analyzeBuild(elfPath: string, mapPath: string | undefined,
       }
     });
   });
-  const nmOutput = await runTool(toolPath(toolchainPath, 'arm-none-eabi-nm'), ['-C', '-S', '-n', '-l', '--defined-only', elfPath]);
+  const nmOutput = toolOutput.nm;
   const parsedSymbols = nmOutput ? parseNmOutput(nmOutput) : [];
   // Keep one record for each region/section membership, matching the nested
   // reference model. In particular, identical nm records are not collapsed.

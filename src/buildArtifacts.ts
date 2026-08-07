@@ -44,6 +44,14 @@ export function existingArtifacts(candidate: BuildArtifacts, root: string): Buil
       result[key] = value;
     }
   });
+  if (result.elf && !result.map) {
+    const elfBaseName = path.basename(result.elf, path.extname(result.elf));
+    const targetName = elfBaseName.replace(/-(debug|release)$/i, '');
+    const mapPath = path.join(root, 'build', `${targetName}.map`);
+    if (fs.existsSync(mapPath)) {
+      result.map = path.relative(root, mapPath);
+    }
+  }
   return result;
 }
 

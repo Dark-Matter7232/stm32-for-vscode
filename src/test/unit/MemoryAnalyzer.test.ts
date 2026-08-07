@@ -103,4 +103,18 @@ suite('Memory analyzer', () => {
       { name: '.data', size: 0x0c, address: 0x20000000, loadAddress: 0x08000498 },
     ]);
   });
+
+  test('keeps init and fini array sections as allocated output sections', () => {
+    const output = [
+      '  6 .init_array   00000004  08002ff8  08002ff8  00003ff8  2**2',
+      '                  CONTENTS, ALLOC, LOAD, READONLY, DATA',
+      '  7 .fini_array   00000004  08002ffc  08002ffc  00003ffc  2**2',
+      '                  CONTENTS, ALLOC, LOAD, READONLY, DATA',
+    ].join('\n');
+
+    expect(parseObjdumpSections(output)).to.deep.include.members([
+      { name: '.init_array', size: 4, address: 0x08002ff8, loadAddress: 0x08002ff8 },
+      { name: '.fini_array', size: 4, address: 0x08002ffc, loadAddress: 0x08002ffc },
+    ]);
+  });
 });
