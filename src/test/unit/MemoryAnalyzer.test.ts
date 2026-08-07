@@ -46,6 +46,32 @@ suite('Memory analyzer', () => {
     expect(Array.from(unique.values())[0].sourceFile).to.equal('system.c');
   });
 
+  test('keeps zero-sized and demangled symbols exactly as nm reports them', () => {
+    expect(parseNmOutput([
+      '08000000 00000000 T __vector_table startup.s:8',
+      '08000010 00000020 T Widget::begin() const\twidget.cpp:17',
+    ].join('\n'))).to.deep.equal([
+      {
+        name: '__vector_table',
+        address: 0x08000000,
+        size: 0,
+        type: 'T',
+        source: 'startup.s:8',
+        sourceFile: 'startup.s',
+        sourceLine: 8,
+      },
+      {
+        name: 'Widget::begin() const',
+        address: 0x08000010,
+        size: 0x20,
+        type: 'T',
+        source: 'widget.cpp:17',
+        sourceFile: 'widget.cpp',
+        sourceLine: 17,
+      },
+    ]);
+  });
+
   test('parses only allocated top-level ELF sections', () => {
     const output = [
       '  0 .text         00000300  08000198  08000198  00000198  2**2',

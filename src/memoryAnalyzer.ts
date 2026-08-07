@@ -62,7 +62,9 @@ export function parseMapFile(content: string): {
   const memoryStart = content.search(/^Memory Configuration\s*$/im);
   const linkerStart = content.search(/^Linker script and memory map\s*$/im);
   const memoryContent = content.slice(memoryStart >= 0 ? memoryStart : 0, linkerStart >= 0 ? linkerStart : undefined);
-  const regionPattern = /^\s*([A-Za-z_][\w-]*)\s+0x([0-9a-f]+)\s+0x([0-9a-f]+)/gim;
+  // Match the same region names as the reference analyzer, including names
+  // containing punctuation (the linker is not restricted to C identifiers).
+  const regionPattern = /^\s*(\S+)\s+0x([0-9a-f]+)\s+0x([0-9a-f]+)/gim;
   let regionMatch = regionPattern.exec(memoryContent);
   while (regionMatch) {
     const regionName = regionMatch[1];
@@ -111,19 +113,17 @@ export function parseMapFile(content: string): {
 
 export function parseNmOutput(output: string): MemoryAnalyzerSymbol[] {
   return output.split(/\r?\n/).flatMap((line) => {
-    const match = line.match(/^\s*([0-9a-f]+)\s+([0-9a-f]+)\s+(\S)\s+(.+)$/i);
+    const match = line.match(/^\s*([0-9a-f]+)\s+([0-9a-f]+)?\s+(\S)\s+(.+)$/i);
     if (!match) {
       return [];
     }
-    const fields = match[4].split(/\s+/);
-    const location = fields[fields.length - 1].match(/^(.+):(\d+)$/);
-    const nameEnd = location ? fields.length - 1 : fields.length;
-    const size = numberFromHex(match[2]);
-    if (size === 0) {
-      return [];
-    }
+    // `nm -C` may put spaces in a demangled symbol name. Only the final
+    // file:line token is metadata; everything before it is the symbol name.
+    const location = match[4].match(/\s+(\S+):(\d+)$/);
+    const name = (location ? match[4].slice(0, match[4].length - location[0].length) : match[4]).trim();
+    const size = numberFromHex(match[2] || '0');
     return [{
-      name: fields.slice(0, nameEnd).join(' '),
+      name,
       address: numberFromHex(match[1]),
       size,
       type: match[3],
@@ -160,7 +160,8 @@ function toolPath(toolchainPath: string | boolean, executable: string): string {
   if (typeof toolchainPath !== 'string' || toolchainPath.length === 0) {
     return process.platform === 'win32' ? `${executable}.exe` : executable;
   }
-  return path.join(toolchainPath, process.platform === 'win32' ? `${executable}.exe` : executable);
+  const candidate = path.join(toolchainPath, process.platform === 'win32' ? `${executable}.exe` : executable);
+  return fs.existsSync(candidate) ? candidate : executable;
 }
 
 function runTool(executable: string, args: string[]): Promise<string | undefined> {
@@ -174,7 +175,9 @@ function runTool(executable: string, args: string[]): Promise<string | undefined
 export async function analyzeBuild(elfPath: string, mapPath: string | undefined, toolchainPath: string | boolean): Promise<MemoryAnalyzerReport> {
   const map = mapPath && fs.existsSync(mapPath) ? parseMapFile(fs.readFileSync(mapPath, 'utf8')) : { regions: [], sections: [] };
   const objdumpOutput = await runTool(toolPath(toolchainPath, 'arm-none-eabi-objdump'), ['-h', elfPath]);
-  const elfSections = objdumpOutput ? parseObjdumpSections(objdumpOutput) : map.sections;
+  // The reference view is ELF-driven. If objdump is unavailable it shows no
+  // section/symbol hierarchy rather than inventing one from map-file text.
+  const elfSections = objdumpOutput ? parseObjdumpSections(objdumpOutput) : [];
   const sections: MemoryAnalyzerSection[] = [];
   map.regions.forEach((region) => { region.used = 0; });
   elfSections.forEach((section) => {
@@ -188,21 +191,17 @@ export async function analyzeBuild(elfPath: string, mapPath: string | undefined,
       }
     });
   });
-  const nmOutput = await runTool(toolPath(toolchainPath, 'arm-none-eabi-nm'), ['-S', '--size-sort', '-C', '-l', '--defined-only', elfPath]);
+  const nmOutput = await runTool(toolPath(toolchainPath, 'arm-none-eabi-nm'), ['-C', '-S', '-n', '-l', '--defined-only', elfPath]);
   const parsedSymbols = nmOutput ? parseNmOutput(nmOutput) : [];
-  const symbolsByKey = new Map<string, MemoryAnalyzerSymbol>();
+  // Keep one record for each region/section membership, matching the nested
+  // reference model. In particular, identical nm records are not collapsed.
+  const symbols: MemoryAnalyzerSymbol[] = [];
   parsedSymbols.forEach((symbol) => {
-    const key = `${symbol.name}:${symbol.address}:${symbol.size}:${symbol.type}`;
-    const existing = symbolsByKey.get(key);
-    if (!existing || (!existing.source && symbol.source)) {
-      symbolsByKey.set(key, symbol);
-    }
-  });
-  const symbols = Array.from(symbolsByKey.values());
-  symbols.forEach((symbol) => {
-    const section = sections.find((candidate) => symbol.address >= candidate.address && symbol.address < candidate.address + candidate.size);
-    symbol.section = section?.name;
-    symbol.region = section?.region;
+    sections.forEach((section) => {
+      if (symbol.address >= section.address && symbol.address < section.address + section.size) {
+        symbols.push({ ...symbol, section: section.name, region: section.region });
+      }
+    });
   });
   return { elf: elfPath, map: mapPath, regions: map.regions, sections, symbols };
 }
