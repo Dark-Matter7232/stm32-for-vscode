@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [4.0.3] - 2026-08-07
+
+### Added
+  - Added a manual GitHub Releases installation and update path while the Marketplace listing is unavailable.
+
+### Changed
+  - Clean now runs the Makefile `clean` target only; it no longer compiles a debug build afterward.
+  - Renamed the visible clean action to **Clean** while preserving the existing command ID.
+
+### Fixed
+  - Aligned memory analyzer symbol grouping and usage reporting with the reference section hierarchy.
+  - Matched reference handling for zero-sized linker-generated symbols, including symbols in `.init_array` and `.fini_array`.
+  - Improved ELF/MAP artifact pairing, fresh report generation after rebuilds, and source-symbol navigation.
+  - Hardened GitHub CMSIS-SVD discovery and downloads with timeouts, response validation, truncation detection, and safe URL construction.
+
 ## [4.0.2] - 2026-07-22
 
 ### Fixed
