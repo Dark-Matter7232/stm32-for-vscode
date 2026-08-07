@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { findSVDFileForChip, SVDFile } from '../../../projectSetup/svdFiles';
+import { suite, test } from 'mocha';
+import { findSVDFileForChip, parseSVDFileList, SVDFile } from '../../../projectSetup/svdFiles';
 
 const files: SVDFile[] = [
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -11,6 +12,24 @@ const files: SVDFile[] = [
 ];
 
 suite('SVD file matching tests', () => {
+  test('parses only blob SVD entries and safely builds raw URLs', () => {
+    expect(parseSVDFileList({
+      tree: [
+        { type: 'tree', path: 'data/STMicro' },
+        { type: 'blob', path: 'data/STMicro/STM32F4 07.svd' },
+        { type: 'blob', path: 'README.md' },
+      ],
+    })).to.deep.equal([{
+      name: 'STM32F4 07.svd',
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      download_url: 'https://raw.githubusercontent.com/modm-io/cmsis-svd-stm32/main/data/STMicro/STM32F4%2007.svd',
+    }]);
+  });
+
+  test('rejects an incomplete GitHub tree response', () => {
+    expect(() => parseSVDFileList({ tree: [], truncated: true })).to.throw('incomplete SVD file list');
+  });
+
   test('matches startup-file family wildcards', () => {
     expect(findSVDFileForChip('stm32h743xx', files)?.name).to.equal('STM32H743.svd');
   });

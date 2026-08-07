@@ -4,32 +4,59 @@ import axios from 'axios';
 const REPO = 'modm-io/cmsis-svd-stm32';
 const TREE_URL = `https://api.github.com/repos/${REPO}/git/trees/main?recursive=1`;
 const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/main`;
+const GITHUB_REQUEST_CONFIG = {
+  timeout: 15_000,
+  headers: {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'stm32-for-vscode',
+  },
+};
 
 interface GithubTreeResponse {
   tree: {
     path: string;
-    type: 'blob' | 'tree';
+    type: string;
   }[];
+  truncated?: boolean;
 }
 
 export interface SVDFile {
   name: string;
   download_url: string;
 }
-export async function getSVDFileList(): Promise<SVDFile[]> {
-  const response = await axios.get<GithubTreeResponse>(TREE_URL);
-  if (response.status !== 200) {
-    throw new Error('Could not get SVD files from GitHub');
+
+function rawFileUrl(filePath: string): string {
+  const encodedPath = filePath.split('/').map(segment => encodeURIComponent(segment)).join('/');
+  return `${RAW_BASE}/${encodedPath}`;
+}
+
+export function parseSVDFileList(data: GithubTreeResponse): SVDFile[] {
+  if (!data || !Array.isArray(data.tree)) {
+    throw new Error('GitHub returned an invalid SVD file list');
+  }
+  if (data.truncated) {
+    throw new Error('GitHub returned an incomplete SVD file list');
   }
 
-  return response.data.tree
-    .filter(entry =>
-      entry.type === 'blob'
-      && entry.path.toLowerCase().endsWith('.svd'))
+  return data.tree
+    .filter(entry => entry.type === 'blob' && entry.path.toLowerCase().endsWith('.svd'))
     .map(entry => ({
-      name: entry.path.split('/').pop()!,
-      download_url: `${RAW_BASE}/${entry.path}`,
+      name: entry.path.slice(entry.path.lastIndexOf('/') + 1),
+      download_url: rawFileUrl(entry.path),
     }));
+}
+
+export async function getSVDFileList(): Promise<SVDFile[]> {
+  try {
+    const response = await axios.get<GithubTreeResponse>(TREE_URL, GITHUB_REQUEST_CONFIG);
+    return parseSVDFileList(response.data);
+  } catch (error) {
+    if (error instanceof Error && (error.message.startsWith('GitHub returned')
+      || error.message === 'GitHub returned an invalid SVD file list')) {
+      throw error;
+    }
+    throw new Error('Could not get SVD files from GitHub');
+  }
 }
 
 export interface SVDLocalFile {
@@ -86,9 +113,19 @@ export async function getSVDFileForChip(chip: string): Promise<SVDLocalFile> {
   const svdFile = findSVDFileForChip(chip, svdFileList);
 
   if (!svdFile) { throw new Error('Could not find desired SVD file for the chip'); }
-  const fileBuffer = (await axios.get(svdFile.download_url)).data;
-  return {
-    name: svdFile.name,
-    data: fileBuffer
-  };
+  try {
+    const response = await axios.get<string>(svdFile.download_url, {
+      ...GITHUB_REQUEST_CONFIG,
+      responseType: 'text',
+    });
+    if (typeof response.data !== 'string' || response.data.length === 0) {
+      throw new Error('GitHub returned an empty SVD file');
+    }
+    return { name: svdFile.name, data: response.data };
+  } catch (error) {
+    if (error instanceof Error && error.message === 'GitHub returned an empty SVD file') {
+      throw error;
+    }
+    throw new Error(`Could not download SVD file ${svdFile.name} from GitHub`);
+  }
 }
