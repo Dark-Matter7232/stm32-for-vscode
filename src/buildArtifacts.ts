@@ -96,41 +96,6 @@ export async function clearLatestMemoryUsage(): Promise<void> {
   await commands.executeCommand('stm32-for-vscode.refreshMenu');
 }
 
-function parseMemoryLength(value: string): number | undefined {
-  const match = value.trim().match(/^(\d+(?:\.\d+)?)([KMG]?)(?:B)?$/i);
-  if (!match) {
-    return undefined;
-  }
-  let multiplier = 1;
-  switch (match[2].toUpperCase()) {
-    case 'K': multiplier = 1024; break;
-    case 'M': multiplier = 1024 ** 2; break;
-    case 'G': multiplier = 1024 ** 3; break;
-    default: break;
-  }
-  return Number(match[1]) * multiplier;
-}
-
-function getMemoryRegionSizes(info: MakeInfo, root: string): {[name: string]: number} {
-  const linkerScript = path.join(root, info.ldscript);
-  if (!fs.existsSync(linkerScript)) {
-    return {};
-  }
-  const content = fs.readFileSync(linkerScript, 'utf8');
-  const memoryBlock = content.match(/\bMEMORY\s*\{([\s\S]*?)\}/i)?.[1] || '';
-  const sizes: {[name: string]: number} = {};
-  const regionPattern = /^\s*([\w-]+)\s*\([^)]*\)\s*:\s*ORIGIN\s*=\s*[^,]+,\s*LENGTH\s*=\s*([^\s,}]+)/gm;
-  let match = regionPattern.exec(memoryBlock);
-  while (match) {
-    const size = parseMemoryLength(match[2]);
-    if (size) {
-      sizes[match[1].toUpperCase()] = size;
-    }
-    match = regionPattern.exec(memoryBlock);
-  }
-  return sizes;
-}
-
 export function parseMemoryUsageOutput(stdout: string): MemoryUsage | undefined {
   const dataLine = stdout.split(/\r?\n/)
     .find((line) => /^\s*\d+\s+\d+\s+\d+\s+\d+/.test(line));
@@ -150,8 +115,11 @@ function getMemoryUsage(info: MakeInfo, elfPath: string): Promise<MemoryUsage | 
   const configuredPath = typeof info.tools.armToolchainPath === 'string'
     ? path.join(info.tools.armToolchainPath, executable)
     : executable;
+  const executablePath = configuredPath !== executable && !fs.existsSync(configuredPath)
+    ? executable
+    : configuredPath;
   return new Promise((resolve) => {
-    execFile(configuredPath, ['-B', elfPath], (error, stdout) => {
+    execFile(executablePath, ['-B', elfPath], (error, stdout) => {
       if (error) {
         resolve(undefined);
         return;
@@ -182,26 +150,12 @@ export default async function reportBuildArtifacts(info: MakeInfo, debug: boolea
     const elfPath = path.join(root, candidate.elf);
     const mapPath = candidate.map ? path.join(root, candidate.map) : undefined;
     const memory = await getMemoryUsage(info, elfPath);
-    const regionSizes = getMemoryRegionSizes(info, root);
-    const memoryRegions: Array<{name: 'RAM' | 'FLASH'; used: number; size?: number}> = [];
     if (memory) {
       lines.push(`FLASH: ${formatBytes(memory.flash)}`);
       lines.push(`RAM: ${formatBytes(memory.ram)}`);
-      (['RAM', 'FLASH'] as const).forEach((name) => {
-        const used = name === 'RAM' ? memory.ram : memory.flash;
-        const size = Object.entries(regionSizes).find(([region]) => region.includes(name))?.[1];
-        memoryRegions.push({ name, used, size });
-      });
     }
     const analysis = await analyzeBuild(elfPath, mapPath, info.tools.armToolchainPath);
     analysis.profile = info.profile || 'debug';
-    analysis.regions.forEach((region) => {
-      const summary = memoryRegions.find((entry) => region.name.toUpperCase().includes(entry.name));
-      if (summary) {
-        region.used = summary.used;
-        region.size = summary.size || region.size;
-      }
-    });
     setLatestMemoryAnalysisReport(analysis);
   }
   if (!candidate.elf) {

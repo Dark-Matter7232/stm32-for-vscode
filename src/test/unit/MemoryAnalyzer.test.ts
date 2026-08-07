@@ -20,6 +20,22 @@ suite('Memory analyzer', () => {
     expect(result.sections).to.deep.include({ name: '.text', address: 0x08000000, size: 0x120, region: 'FLASH' });
   });
 
+  test('accepts linker region names containing punctuation', () => {
+    const result = parseMapFile([
+      'Memory Configuration',
+      'ITCM-RAM$0           0x00000000         0x00001000',
+      '*default*            0x00000000         0xffffffff',
+      'Linker script and memory map',
+    ].join('\n'));
+
+    expect(result.regions).to.deep.equal([{
+      name: 'ITCM-RAM$0',
+      origin: 0,
+      size: 0x1000,
+      used: 0,
+    }]);
+  });
+
   test('parses nm symbols and source locations', () => {
     expect(parseNmOutput('08000000 00000010 T Reset_Handler startup_stm32.c:42\n')).to.deep.equal([{
       name: 'Reset_Handler',
