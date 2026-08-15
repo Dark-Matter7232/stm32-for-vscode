@@ -1,9 +1,9 @@
 # Changelog
 
-## [Unreleased]
+## [4.0.4] - 2026-08-15
 
 ### Fixed
-  - Added sequential China network fallbacks for CMSIS-SVD downloads through `ghfast.top`, `cdn.jsdmirror.com`, `gh-proxy.com`, and `gh.catmak.name` when GitHub Raw is unavailable.
+  - Added sequential network fallbacks for CMSIS-SVD downloads through `ghfast.top`, `cdn.jsdmirror.com`, `gh-proxy.com`, and `gh.catmak.name` for mainland China users.
 
 ## [4.0.3] - 2026-08-07
 
