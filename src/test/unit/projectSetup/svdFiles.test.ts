@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { suite, test } from 'mocha';
-import { findSVDFileForChip, parseSVDFileList, SVDFile } from '../../../projectSetup/svdFiles';
+import { findSVDFileForChip, parseSVDFileList, rawFileUrls, SVDFile } from '../../../projectSetup/svdFiles';
 
 const files: SVDFile[] = [
   // eslint-disable-next-line @typescript-eslint/naming-convention
@@ -24,6 +24,20 @@ suite('SVD file matching tests', () => {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       download_url: 'https://raw.githubusercontent.com/modm-io/cmsis-svd-stm32/main/data/STMicro/STM32F4%2007.svd',
     }]);
+  });
+
+  test('builds the China mirror fallback chain in order', () => {
+    expect(rawFileUrls('data/STMicro/STM32F407.svd')).to.deep.equal([
+      'https://raw.githubusercontent.com/modm-io/cmsis-svd-stm32/main/data/STMicro/STM32F407.svd',
+      'https://ghfast.top/https://raw.githubusercontent.com/modm-io/cmsis-svd-stm32/main/data/STMicro/'
+        + 'STM32F407.svd',
+      'https://cdn.jsdmirror.com/gh/modm-io/cmsis-svd-stm32@main/data/STMicro/'
+        + 'STM32F407.svd',
+      'https://gh-proxy.com/https://raw.githubusercontent.com/modm-io/cmsis-svd-stm32/main/data/STMicro/'
+        + 'STM32F407.svd',
+      'https://gh.catmak.name/https://raw.githubusercontent.com/modm-io/cmsis-svd-stm32/main/data/STMicro/'
+        + 'STM32F407.svd',
+    ]);
   });
 
   test('rejects an incomplete GitHub tree response', () => {

@@ -4,6 +4,13 @@ import axios from 'axios';
 const REPO = 'modm-io/cmsis-svd-stm32';
 const TREE_URL = `https://api.github.com/repos/${REPO}/git/trees/main?recursive=1`;
 const RAW_BASE = `https://raw.githubusercontent.com/${REPO}/main`;
+const RAW_MIRROR_URLS = [
+  (url: string) => url,
+  (url: string) => `https://ghfast.top/${url}`,
+  (url: string) => `https://cdn.jsdmirror.com/gh/${REPO}@main/${url.slice(`${RAW_BASE}/`.length)}`,
+  (url: string) => `https://gh-proxy.com/${url}`,
+  (url: string) => `https://gh.catmak.name/${url}`,
+];
 const GITHUB_REQUEST_CONFIG = {
   timeout: 15_000,
   headers: {
@@ -28,6 +35,11 @@ export interface SVDFile {
 function rawFileUrl(filePath: string): string {
   const encodedPath = filePath.split('/').map(segment => encodeURIComponent(segment)).join('/');
   return `${RAW_BASE}/${encodedPath}`;
+}
+
+export function rawFileUrls(filePath: string): string[] {
+  const rawUrl = rawFileUrl(filePath);
+  return RAW_MIRROR_URLS.map(buildUrl => buildUrl(rawUrl));
 }
 
 export function parseSVDFileList(data: GithubTreeResponse): SVDFile[] {
@@ -113,19 +125,22 @@ export async function getSVDFileForChip(chip: string): Promise<SVDLocalFile> {
   const svdFile = findSVDFileForChip(chip, svdFileList);
 
   if (!svdFile) { throw new Error('Could not find desired SVD file for the chip'); }
-  try {
-    const response = await axios.get<string>(svdFile.download_url, {
-      ...GITHUB_REQUEST_CONFIG,
-      responseType: 'text',
-    });
-    if (typeof response.data !== 'string' || response.data.length === 0) {
-      throw new Error('GitHub returned an empty SVD file');
+  const downloadUrls = [
+    svdFile.download_url,
+    ...RAW_MIRROR_URLS.slice(1).map(buildUrl => buildUrl(svdFile.download_url)),
+  ];
+  for (const downloadUrl of downloadUrls) {
+    try {
+      const response = await axios.get<string>(downloadUrl, {
+        ...GITHUB_REQUEST_CONFIG,
+        responseType: 'text',
+      });
+      if (typeof response.data === 'string' && response.data.length > 0) {
+        return { name: svdFile.name, data: response.data };
+      }
+    } catch {
+      // Try the next mirror. These services can be unavailable independently.
     }
-    return { name: svdFile.name, data: response.data };
-  } catch (error) {
-    if (error instanceof Error && error.message === 'GitHub returned an empty SVD file') {
-      throw error;
-    }
-    throw new Error(`Could not download SVD file ${svdFile.name} from GitHub`);
   }
+  throw new Error(`Could not download SVD file ${svdFile.name} from GitHub or configured mirrors`);
 }
